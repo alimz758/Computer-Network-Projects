@@ -23,11 +23,11 @@ Email: thealimz758@g.ucla.edu
 
 pointers location and as the result of that the original string gets modified. I was trying to be smart but didn't work and I could not 
 
-fix it.  Hence, I used a smiple 'for loop' to find the '.' and extract the extention without modifying the original string
+fix it.  Hence, I used a smiple 'for loop' to find the '.' and extract the extention without modifying the original string.
 
-2. Using getcwd() on MacOS was giving me an issue, as mentioned [here](https://fltk.easysw.narkive.com/f6E7AAsb/getcwd-bug-on-osx), 
+2. Using getcwd() on MacOS was giving me an issue, as mentioned [here](https://fltk.easysw.narkive.com/f6E7AAsb/getcwd-bug-on-osx), so I found out the issue in
 
-so I found out the issue in developing and running the app from that article. 
+developing and running the app from that article. 
 
 Note that I didn't use getcwd() in my implementation as the assignment says it always looks within the directory. For more accurate 
 
@@ -41,7 +41,6 @@ http://man7.org/linux/man-pages/man2/open.2.html
 
 https://pubs.opengroup.org/onlinepubs/009695399/functions/getcwd.html
 
-https://fltk.easysw.narkive.com/f6E7AAsb/getcwd-bug-on-osx : to debug getcwd() on MacOS
 
 ### To start and have a better undestanding of the project I read the following article
 
