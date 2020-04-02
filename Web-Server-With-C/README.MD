@@ -19,14 +19,27 @@ Email: thealimz758@g.ucla.edu
 9. Close the socket
 
 ## Problems Faced:
-In content_type_checker() I was using strtok() and strchr() to find the '.' and extract the extention but strtok() modifies the pointers 
+1. In content_type_checker() I was using strtok() and strchr() to find the '.' and extract the extention but strtok() modifies the 
 
-location and as the result of that the original string gets modified. I was trying to be smart but didn't work and I could not fix it. 
+pointers location and as the result of that the original string gets modified. I was trying to be smart but didn't work and I could not 
 
-Hence, I used a smiple 'for loop' to find the '.' and extract the extention without modifying the original string
+fix it.  Hence, I used a smiple 'for loop' to find the '.' and extract the extention without modifying the original string
+
+2. Using getcwd() on MacOS was giving me an issue, as mentioned [here](https://fltk.easysw.narkive.com/f6E7AAsb/getcwd-bug-on-osx), so I 
+
+found out the issue in developing and running the app from that article. Note that I didn't used getcwd() in my implementation as
+
+the assignment says it always looks within the directory. For more complex implementation used [getcwd()](http://man7.org/linux/man-pages/man3/getcwd.3.html)
 
 
 ## Resources Used:
+### To open the file
+
+http://man7.org/linux/man-pages/man2/open.2.html
+
+https://pubs.opengroup.org/onlinepubs/009695399/functions/getcwd.html
+
+https://fltk.easysw.narkive.com/f6E7AAsb/getcwd-bug-on-osx : to debug getcwd() on MacOS
 
 ### To start and have a better undestanding of the project I read the following article
 
@@ -47,3 +60,9 @@ https://c-for-dummies.com/blog/?p=1758
 https://stackoverflow.com/questions/19555434/how-to-extract-a-substring-from-a-string-in-c
 
 https://stackoverflow.com/questions/10651999/how-can-i-check-if-a-single-char-exists-in-a-c-string
+
+
+## How to Run
+Run the executable file and the do an HTTP request as described in the specification (i.e http://<machinename>:<port>/<filename>)
+
+The port number is hardcoded in the source code as 8000, if you wish to change it, do it there. Then run the MAKE  again.

@@ -20,6 +20,10 @@
 #include <stdlib.h>
 #include <netinet/in.h>
 #include <string.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <dirent.h>
 const int PORT= 8000;
 //content types
 char * content_type[5]={
@@ -29,7 +33,7 @@ char * content_type[5]={
     "image/png",
     "application/octet-stream" //for binary if not specified
 };
-//define the HTTP response status code
+//define the HTTP response status code- based on the book I only put these
 char* http_status_code[5]={
     "200 OK",
     "301 Moved Permanently",
@@ -118,9 +122,42 @@ char * request_parser(char *client_request){
     response_content_type= content_type_checker(file_name);
     return file_name;
 }
+//helper function to open the desired file
+int open_desired_file(char * file_name){
+    struct dirent* entry;
+    int fd=-1;
+    // char cwd[1024];
+    // //get the current working directory
+    // if (getcwd(cwd, sizeof(cwd)) == NULL) {
+    //     printf("ERROR! getcwd() failed.\n");
+    //     close(create_socket_fd);
+    //     close(new_socket);
+    //     return -1;
+    // } 
+    // printf("CWD is %s\n", cwd);
+    // opendir() returns a pointer of DIR type.  
+    DIR *curr_directory = opendir("."); 
+    if (curr_directory == NULL) { // opendir returns NULL if couldn't open directory 
+        printf("Could not open current directory" ); 
+        return -1; 
+    } 
+    // Refer http://pubs.opengroup.org/onlinepubs/7990989775/xsh/readdir.html 
+    // for readdir() 
+    while ((entry = readdir(curr_directory)) != NULL) {
+        //compare the file name with enry name, if the same then open with READ ONLY
+        if (strcasecmp(file_name, entry->d_name) == 0) {
+            printf("Current File Matched %s\n", entry->d_name);
+            fd = open(entry->d_name, O_RDONLY);
+            break;
+        }
+    }
+    closedir(curr_directory);     
+    return fd;
+}
 int main(int argc, char const *argv[]){
     //initializing to variables ti read the clients message
     long read_value;
+    int file_descriptor;
     int message_size=30000;
     char client_buffer_message[message_size];
     char * file_name=NULL;
@@ -168,15 +205,18 @@ int main(int argc, char const *argv[]){
             printf("ERROR! Could not read the client message\n");
         }
         else{
-            printf(" Client's Message is\n %s\n", client_buffer_message);
+            // printf(" Client's Message is\n %s\n", client_buffer_message);
             //START PROCESSING THE REQUEST
             //FIRST
             //GET THE FILE NAME FROM THE PATH
             file_name= request_parser(client_buffer_message);
             printf("File Name: %s\n" , file_name);
             printf("File Content Type: %s\n" , response_content_type);
-            //TODO: OPEN FILE
-
+            //Open the desired file
+            file_descriptor= open_desired_file(file_name);
+            if(file_descriptor<0){
+                printf("ERROR! Could not open the file!");
+            }
             //TODO: SEND THE RESPONSE BACK THE CLIENT
         }
     }
