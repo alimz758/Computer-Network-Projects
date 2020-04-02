@@ -25,9 +25,9 @@ pointers location and as the result of that the original string gets modified. I
 
 fix it.  Hence, I used a smiple 'for loop' to find the '.' and extract the extention without modifying the original string.
 
-2. Using getcwd() on MacOS was giving me an issue, as mentioned [here](https://fltk.easysw.narkive.com/f6E7AAsb/getcwd-bug-on-osx), so I found out the issue in 
+2. Using getcwd() on MacOS was giving me an issue, as mentioned [here](https://fltk.easysw.narkive.com/f6E7AAsb/getcwd-bug-on-osx), so I found out the issue in developing and running 
 
-eveloping and running the app from that article. 
+the app from that article. 
 
 Note that I didn't use getcwd() in my implementation as the assignment says it always looks within the directory. For more accurate 
 
