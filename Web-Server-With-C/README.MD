@@ -1,3 +1,4 @@
+# About Me
 Name: Ali Mirabzadeh,
 
 UID: 305179067,
@@ -27,20 +28,22 @@ Hence, I used a smiple 'for loop' to find the '.' and extract the extention with
 
 ## Resources Used:
 
-To start and have a better undestanding of the project I read the following article
+### To start and have a better undestanding of the project I read the following article
 
 https://medium.com/from-the-scratch/http-server-what-do-you-need-to-know-to-build-a-simple-http-server-from-scratch-d1ef8945e4fa
 
-For sockadd_in the library that I used for the internet address  
+### For sockadd_in the library that I used for the internet address  
 
 https://www.gta.ufrj.br/ensino/eel878/sockets/sockaddr_inman.html
 
-For HTTP response header content
+### For HTTP response header content
 
 https://developer.mozilla.org/en-US/docs/Glossary/Response_header
 
-For string parsing, used for parsing the HTTP request
+### For string parsing, used for parsing the HTTP request
 
 https://c-for-dummies.com/blog/?p=1758
+
 https://stackoverflow.com/questions/19555434/how-to-extract-a-substring-from-a-string-in-c
+
 https://stackoverflow.com/questions/10651999/how-can-i-check-if-a-single-char-exists-in-a-c-string
