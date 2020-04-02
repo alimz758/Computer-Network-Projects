@@ -25,11 +25,13 @@ pointers location and as the result of that the original string gets modified. I
 
 fix it.  Hence, I used a smiple 'for loop' to find the '.' and extract the extention without modifying the original string
 
-2. Using getcwd() on MacOS was giving me an issue, as mentioned [here](https://fltk.easysw.narkive.com/f6E7AAsb/getcwd-bug-on-osx), so I 
+2. Using getcwd() on MacOS was giving me an issue, as mentioned [here](https://fltk.easysw.narkive.com/f6E7AAsb/getcwd-bug-on-osx), 
 
-found out the issue in developing and running the app from that article. Note that I didn't used getcwd() in my implementation as
+so I found out the issue in developing and running the app from that article. 
 
-the assignment says it always looks within the directory. For more complex implementation used [getcwd()](http://man7.org/linux/man-pages/man3/getcwd.3.html)
+Note that I didn't use getcwd() in my implementation as the assignment says it always looks within the directory. For more accurate 
+
+implementation use [getcwd()](http://man7.org/linux/man-pages/man3/getcwd.3.html)
 
 
 ## Resources Used:
