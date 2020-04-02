@@ -1,5 +1,5 @@
-Name: Ali Mirabzadeh
-UID: 305179067
+Name: Ali Mirabzadeh,
+UID: 305179067,
 Email: thealimz758@g.ucla.edu
 
 
@@ -7,7 +7,11 @@ HIGH LEVEL DESIGN:
 
 
 Problems Faced:
+In content_type_checker() I was using strtok() and strchr() to find the '.' and extract the extention but strtok() modifies the pointers 
 
+location and as the result of that the original string gets modified. I was trying to be smart but didn't work and I could not fix it. 
+
+Hence, I used a smiple 'for loop' to find the '.' and extract the extention without modifying the original string
 
 
 Resources Used:
