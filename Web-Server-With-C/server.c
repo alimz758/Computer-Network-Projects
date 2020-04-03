@@ -43,12 +43,20 @@ char* http_status_code[5]={
     "404 Not Found",
     "505 HTTP Version Not Supported"
 };
+
 //to be used to create a socket
 int create_socket_fd, new_socket; //int server_fd = socket(domain, type, protocol);
 //domain: communication domain in which the socket should be created our case AF_INET (IP)
 //type: type of service. This is selected according to the properties required by the application: SOCK_STREAM (virtual circuit service
 //protocol: indicate a specific protocol to use in supporting the sockets operation. This is useful in cases 
 //where some families may have more than one protocol to support a given type of service. The return value is a file descriptor (a small integer). 
+void sig_handler(int signo) {
+  if (signo == SIGINT) {
+    close(create_socket_fd);
+    close(new_socket);
+    printf("Recieved SIGINT\n");
+  }
+}
 char * response_content_type=NULL;
 //helper function to check the file format and return the content type accordingly 
 char * content_type_checker(char *file_name_copy){
@@ -176,9 +184,9 @@ void send_response_to_client(char *file_name, int fd, int socket,struct stat fd_
         status= http_status_code[3];
         if ((fd = open("404.html", O_RDONLY)) < 0) {
             printf("ERROR! Could not open 404.html\n");
-            response_content_type= content_type[0];
+            
         }
-
+        response_content_type= content_type[0];
     }
     else{
         status= http_status_code[0];
@@ -233,7 +241,8 @@ int main(int argc, char const *argv[]){
     char client_buffer_message[message_size];
     char * file_name=NULL;
     printf("\n\n\t\t\tSERVING ON PORT: %d\n\n", PORT);
-    int backlog=5;
+    int backlog=10;
+    signal(SIGINT, sig_handler);
     //struct to be used for biding
     struct sockaddr_in socket_address;
     socklen_t address_len;
