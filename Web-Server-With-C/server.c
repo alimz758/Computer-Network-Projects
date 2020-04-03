@@ -164,6 +164,7 @@ int open_desired_file(char * file_name){
 }
 //helper fucntion to send the message to the client
 void send_response_to_client(char *file_name, int fd, int socket,struct stat fd_stat){
+
     char * status=NULL;
     char http_response_message[BUFFER_SIZE];
     //if for any reason could not open a file, respond with 404
@@ -172,8 +173,9 @@ void send_response_to_client(char *file_name, int fd, int socket,struct stat fd_
         status= http_status_code[3];
         if ((fd = open("404.html", O_RDONLY)) < 0) {
             printf("ERROR! Could not open 404.html\n");
+            response_content_type= content_type[0];
         }
-        response_content_type= content_type[0];
+
     }
     else{
         status= http_status_code[0];
@@ -190,15 +192,15 @@ void send_response_to_client(char *file_name, int fd, int socket,struct stat fd_
         //FOLLOW
         sprintf(http_response_message, 
             "HTTP/1.1 %s\r\nConnection: close\r\nDate: %s\r\nServer: C Web Server\r\nContent-Length: %lld\r\nContent-Type: %s\r\n\r\n",
-            status, s, fd_stat.st_size,*content_type);
+            status, s, fd_stat.st_size,response_content_type);
     }
     //no open fd
     else{
         sprintf(http_response_message, 
             "HTTP/1.1 %s\r\nConnection: close\r\nDate: %s\r\nServer: C Web Server\r\nContent-Type: %s\r\n\r\n",
-            status, s, *content_type);
+            status, s, response_content_type);
     }
-    printf("Response message: %s\n", http_response_message);
+    printf("Response message:\n %s\n", http_response_message);
     fflush(stdout);
     write(new_socket , http_response_message , strlen(http_response_message));
     // Send the filefile
