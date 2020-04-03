@@ -62,6 +62,12 @@ https://stackoverflow.com/questions/19555434/how-to-extract-a-substring-from-a-s
 
 https://stackoverflow.com/questions/10651999/how-can-i-check-if-a-single-char-exists-in-a-c-string
 
+## For Date and Time and FD stat
+
+https://www.studytonight.com/c/programs/misc/display-current-date-and-time
+
+https://linux.die.net/man/2/fstat
+
 
 ## How to Run
 Run the executable file and the do an HTTP request as described in the specification (i.e http://<machinename>:<port>/<filename>)

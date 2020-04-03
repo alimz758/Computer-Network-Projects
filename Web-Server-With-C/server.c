@@ -24,6 +24,8 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <dirent.h>
+#include<time.h>
+#define BUFFER_SIZE 4096
 const int PORT= 8000;
 //content types
 char * content_type[5]={
@@ -135,7 +137,13 @@ int open_desired_file(char * file_name){
     //     return -1;
     // } 
     // printf("CWD is %s\n", cwd);
-    // opendir() returns a pointer of DIR type.  
+    // opendir() returns a pointer of DIR type.
+    if(strcmp(file_name,"LandingPage")==0){
+        fd= open("./index.html",O_RDONLY);
+        if(fd<0){
+            printf("Error! Could not load the Landing Page\n");
+        }
+    }  
     DIR *curr_directory = opendir("."); 
     if (curr_directory == NULL) { // opendir returns NULL if couldn't open directory 
         printf("Could not open current directory" ); 
@@ -154,8 +162,66 @@ int open_desired_file(char * file_name){
     closedir(curr_directory);     
     return fd;
 }
+//helper fucntion to send the message to the client
+void send_response_to_client(char *file_name, int fd, int socket,struct stat fd_stat){
+    char * status=NULL;
+    char http_response_message[BUFFER_SIZE];
+    //if for any reason could not open a file, respond with 404
+    if(fd<0){
+        //404: NOT FOUND
+        status= http_status_code[3];
+        if ((fd = open("404.html", O_RDONLY)) < 0) {
+            printf("ERROR! Could not open 404.html\n");
+        }
+        response_content_type= content_type[0];
+    }
+    else{
+        status= http_status_code[0];
+    }
+    // Get the date
+    char s[1000];   
+    time_t t = time(NULL);
+    struct tm * p = localtime(&t);
+    strftime(s, 1000, "%A, %B %d %Y", p);
+    //start creating the response
+    memset(http_response_message,0,BUFFER_SIZE);
+    //if the file exist
+    if(fd>0){
+        //FOLLOW
+        sprintf(http_response_message, 
+            "HTTP/1.1 %s\r\nConnection: close\r\nDate: %s\r\nServer: C Web Server\r\nContent-Length: %lld\r\nContent-Type: %s\r\n\r\n",
+            status, s, fd_stat.st_size,*content_type);
+    }
+    //no open fd
+    else{
+        sprintf(http_response_message, 
+            "HTTP/1.1 %s\r\nConnection: close\r\nDate: %s\r\nServer: C Web Server\r\nContent-Type: %s\r\n\r\n",
+            status, s, *content_type);
+    }
+    printf("Response message: %s\n", http_response_message);
+    fflush(stdout);
+    write(new_socket , http_response_message , strlen(http_response_message));
+    // Send the filefile
+    char file_buf[BUFFER_SIZE];
+    memset(file_buf, 0, BUFFER_SIZE);
+    long bytes_read;
+    if (fd > 0) {
+        while ((bytes_read = read(fd, file_buf, BUFFER_SIZE)) != 0) {
+            if (bytes_read > 0) {
+                if (write(new_socket, file_buf, bytes_read) < 0) {
+                    printf("Error when writing to file\n");
+                }
+            }	
+            else {
+                printf("Error when reading file\n");
+            }
+        }
+    }
+    close(fd);
+}
 int main(int argc, char const *argv[]){
     //initializing to variables ti read the clients message
+    struct stat stat;
     long read_value;
     int file_descriptor;
     int message_size=30000;
@@ -187,15 +253,11 @@ int main(int argc, char const *argv[]){
     //The listen system call tells a socket that it should be capable of accepting incoming connections
     //The second parameter, backlog, defines the maximum number of pending connections that can be queued up before connections are refused.
     if (listen(create_socket_fd, backlog) < 0) { 
-        printf("ERROR! Could not listen to the cocket\n");
+        printf("ERROR! Could not listen to the socket\n");
         exit(EXIT_FAILURE); 
     }
-    while(1){
+    while((new_socket = accept(create_socket_fd, (struct sockaddr *)&socket_address, (socklen_t*)&address_len))>0){
         printf("\n\t\t+++++++ Waiting For New Connection ++++++++\n\n");
-        if ((new_socket = accept(create_socket_fd, (struct sockaddr *)&socket_address, (socklen_t*)&address_len))<0){
-            printf("ERROR! Accept failed\n");
-            exit(EXIT_FAILURE);
-        }
         //read the client's message with read() system call  ssize_t read(int fd, void *buf, size_t count);
         read_value = read(new_socket,client_buffer_message,message_size-1 );
         //if nothing to read
@@ -210,16 +272,20 @@ int main(int argc, char const *argv[]){
             //FIRST
             //GET THE FILE NAME FROM THE PATH
             file_name= request_parser(client_buffer_message);
-            printf("File Name: %s\n" , file_name);
+            printf("Requested File Name: %s\n" , file_name);
             printf("File Content Type: %s\n" , response_content_type);
             //Open the desired file
             file_descriptor= open_desired_file(file_name);
             if(file_descriptor<0){
-                printf("ERROR! Could not open the file!");
+                printf("ERROR! Could not open the file!\n");
+            }else{
+                fstat(file_descriptor, &stat);
             }
             //TODO: SEND THE RESPONSE BACK THE CLIENT
+            send_response_to_client(file_name,file_descriptor,new_socket,stat);
         }
+        shutdown(new_socket,0);
     }
-    close(create_socket_fd);
+    shutdown(create_socket_fd,0);
     return 0;
 }
