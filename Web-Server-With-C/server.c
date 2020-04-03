@@ -56,6 +56,9 @@ char * content_type_checker(char *file_name_copy){
     int file_name_length = strlen(file_name_copy);
     int dot_index = -1;
     //find the dot position
+    if(strcmp(file_name_copy, "LandingPage") == 0){
+        return content_type[0]; 
+    }
     for (int i = file_name_length - 1; i >= 0; i--) {
         if (file_name_copy[i] == '.') {
             dot_index = i;
