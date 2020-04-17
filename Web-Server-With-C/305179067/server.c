@@ -25,8 +25,8 @@
 #include <fcntl.h>
 #include <dirent.h>
 #include<time.h>
-#define BUFFER_SIZE 50000
-
+#define BUFFER_SIZE 4096
+const int PORT= 8000;
 //content types
 char * content_type[5]={
     "text/html",
@@ -36,9 +36,12 @@ char * content_type[5]={
     "application/octet-stream" //for binary if not specified
 };
 //define the HTTP response status code- based on the book I only put these
-char* http_status_code[2]={
+char* http_status_code[5]={
     "200 OK",
+    "301 Moved Permanently",
+    "400 Bad Request",
     "404 Not Found",
+    "505 HTTP Version Not Supported"
 };
 
 //to be used to create a socket
@@ -172,13 +175,13 @@ int open_desired_file(char * file_name){
     return fd;
 }
 //helper fucntion to send the message to the client
-void send_response_to_client(int fd, int socket,struct stat fd_stat){
+void send_response_to_client(char *file_name, int fd, int socket,struct stat fd_stat){
     char * status=NULL;
     char http_response_message[BUFFER_SIZE];
     //if for any reason could not open a file, respond with 404
     if(fd<0){
         //404: NOT FOUND
-        status= http_status_code[1];
+        status= http_status_code[3];
         if ((fd = open("404.html", O_RDONLY)) < 0) {
             printf("ERROR! Could not open 404.html\n");
 
@@ -210,8 +213,8 @@ void send_response_to_client(int fd, int socket,struct stat fd_stat){
             status, s, response_content_type);
     }
     printf("Response message:\n %s\n", http_response_message);
-    //send the HTTP Response
-    write(socket , http_response_message , strlen(http_response_message));
+    fflush(stdout);
+    write(new_socket , http_response_message , strlen(http_response_message));
     // Send the filefile
     char file_buf[BUFFER_SIZE];
     memset(file_buf, 0, BUFFER_SIZE);
@@ -219,7 +222,7 @@ void send_response_to_client(int fd, int socket,struct stat fd_stat){
     if (fd > 0) {
         while ((bytes_read = read(fd, file_buf, BUFFER_SIZE)) != 0) {
             if (bytes_read > 0) {
-                if (write(socket, file_buf, bytes_read) < 0) {
+                if (write(new_socket, file_buf, bytes_read) < 0) {
                     printf("Error when writing to file\n");
                 }
             }	
@@ -230,21 +233,15 @@ void send_response_to_client(int fd, int socket,struct stat fd_stat){
     }
     close(fd);
 }
-int main(int argc, char *argv[]){
+int main(){
     //initializing to variables ti read the clients message
     struct stat stat;
     long read_value;
     int file_descriptor;
-    int message_size=1024;
+    int message_size=30000;
     char client_buffer_message[message_size];
     char * file_name=NULL;
-    
-    if (argc < 2) {
-        fprintf(stderr, "ERROR! Please provide a port number\n");
-        exit(1);
-    }
-    int port= atoi(argv[1]);;
-    printf("\n\n\t\t\tSERVING ON PORT: %d\n\n", port);
+    printf("\n\n\t\t\tSERVING ON PORT: %d\n\n", PORT);
     int backlog=10;
     signal(SIGINT, sig_handler);
     //struct to be used for biding
@@ -260,7 +257,7 @@ int main(int argc, char *argv[]){
     //The address family we used when we set up the socket. In our case, it’s AF_INET.
     socket_address.sin_family= AF_INET;
     //The port number (the transport address)
-    socket_address.sin_port=htons(port);/* htons converts a short integer (e.g. port) to a network representation */ 
+    socket_address.sin_port=htons(PORT);/* htons converts a short integer (e.g. port) to a network representation */ 
     //The address for this socket
     socket_address.sin_addr.s_addr = htonl(INADDR_ANY);/* htonl converts a long integer (e.g. address) to a network representation */ 
     //bind the socket
@@ -279,7 +276,7 @@ int main(int argc, char *argv[]){
         //read the client's message with read() system call  ssize_t read(int fd, void *buf, size_t count);
         read_value = read(new_socket,client_buffer_message,message_size-1 );
         //if nothing to read
-        if(read_value<=0){
+        if(read_value<0){
             close(create_socket_fd);
             close(new_socket);
             printf("ERROR! Could not read the client message\n");
@@ -300,7 +297,7 @@ int main(int argc, char *argv[]){
                 fstat(file_descriptor, &stat);
             }
             //TODO: SEND THE RESPONSE BACK THE CLIENT
-            send_response_to_client(file_descriptor,new_socket,stat);
+            send_response_to_client(file_name,file_descriptor,new_socket,stat);
         }
         shutdown(new_socket,0);
     }

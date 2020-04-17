@@ -35,16 +35,19 @@ implementation use [getcwd()](http://man7.org/linux/man-pages/man3/getcwd.3.html
 
 
 ## Resources Used:
+
+### To start and have a better undestanding of the project I read the following articles
+
+https://medium.com/from-the-scratch/http-server-what-do-you-need-to-know-to-build-a-simple-http-server-from-scratch-d1ef8945e4fa
+
+https://beej.us/guide/bgnet/html/#a-simple-stream-server
+
 ### To open the file
 
 http://man7.org/linux/man-pages/man2/open.2.html
 
 https://pubs.opengroup.org/onlinepubs/009695399/functions/getcwd.html
 
-
-### To start and have a better undestanding of the project I read the following article
-
-https://medium.com/from-the-scratch/http-server-what-do-you-need-to-know-to-build-a-simple-http-server-from-scratch-d1ef8945e4fa
 
 ### For sockadd_in the library that I used for the internet address  
 
