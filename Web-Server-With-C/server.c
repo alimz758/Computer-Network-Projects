@@ -189,7 +189,7 @@ void send_response_to_client(int fd, int socket,struct stat fd_stat){
         //OK
         status= http_status_code[0];
     }
-    // Get the date
+    // Get the date, used stack
     char s[1000];   
     time_t t = time(NULL);
     struct tm * p = localtime(&t);
@@ -210,9 +210,9 @@ void send_response_to_client(int fd, int socket,struct stat fd_stat){
             status, s, response_content_type);
     }
     printf("Response message:\n %s\n", http_response_message);
-    //send the HTTP Response
+    //send the HTTP Header
     write(socket , http_response_message , strlen(http_response_message));
-    // Send the filefile
+    // Send the requested file
     char file_buf[BUFFER_SIZE];
     memset(file_buf, 0, BUFFER_SIZE);
     long bytes_read;
@@ -220,11 +220,11 @@ void send_response_to_client(int fd, int socket,struct stat fd_stat){
         while ((bytes_read = read(fd, file_buf, BUFFER_SIZE)) != 0) {
             if (bytes_read > 0) {
                 if (write(socket, file_buf, bytes_read) < 0) {
-                    printf("Error when writing to file\n");
+                    printf("Error! Could not write() the file\n");
                 }
             }	
             else {
-                printf("Error when reading file\n");
+                printf("Error! Could not read() the file\n");
             }
         }
     }
