@@ -12,7 +12,7 @@
 #define BUFFER_SIZE 50000
 
 
-
+//Main
 int main(int argc, char *argv[]){
     //initializing to variables ti read the clients message
     struct stat stat;
