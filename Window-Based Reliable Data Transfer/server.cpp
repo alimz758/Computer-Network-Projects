@@ -1,18 +1,5 @@
-#include <stdio.h>
-#include <sys/socket.h>
-#include <unistd.h>
-#include <stdlib.h>
-#include <netinet/in.h>
-#include <string.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-#include <dirent.h>
-#include<time.h>
-#define BUFFER_SIZE 50000
-
-
-//Main
+#include "gbn.h"
+//------------------- SERVER ------------------
 int main(int argc, char *argv[]){
     //initializing to variables ti read the clients message
     struct stat stat;
@@ -27,6 +14,6 @@ int main(int argc, char *argv[]){
         exit(1);
     }
     int port= atoi(argv[1]);;
-    printf("\n\n\t\t\tSERVING ON PORT: %d\n\n", port);
+    printf("\n\n\t\t\tThe Server is Serving on Port: %d\n\n", port);
     return 0;
 }

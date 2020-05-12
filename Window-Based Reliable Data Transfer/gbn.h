@@ -12,14 +12,16 @@
 #include <dirent.h>
 #include <netdb.h>
 #include<time.h>
-#define PAYLOAD_SIZE 512
+#define MAX_PAYLOAD_SIZE 512
 #define MAX_SEQUENCE_NUM 25600
 #define MAX_RTO 500 //in msec
-#define WINDOW_SIZE 5
+#define WINDOW_SIZE 5120 
 #define BUFFER_SIZE 1024
 // ROLES
 #define CLIENT 1
 #define SERVER 2
+//Client sends and ACK_NUM=0 for the first hand-shake
+#define INIT_ACK 0
 //needs to be 12bytes
 struct packet_header{
     int sequence_num; 
@@ -27,15 +29,15 @@ struct packet_header{
     bool ack_flag,
         syn_flag,
         fin_flag;
-    bool nothing; //just for padding pusposes to be 12-bytes
-}packet_header;
-//packet info 524 bytes including the payload
-struct packet_info{
-    struct packet_header;
-    char data[PAYLOAD_SIZE];
+    bool nothing=false; //just for padding pusposes to be 12-bytes
 };
+//packet info 524 bytes including the payload
+typedef struct packet_info{
+    struct  packet_header * packet_header_pointer;
+    char data[MAX_PAYLOAD_SIZE];
+}packet_info;
 //keep track of state
-struct state{
+typedef struct state {
     int udp_state;
     int udp_role;
     struct sockaddr_storage client;
@@ -48,7 +50,7 @@ struct state{
     int recv_ack_timeout_count;
     int window_size;
 }state;
-//diferent modes
+//different modes
 enum {
 	CLOSED=0,
 	LISTENING,
@@ -58,4 +60,7 @@ enum {
 	FIN_SENT,
 	FIN_RCVD
 };
+
+
+int packet_generator(packet_info *packet, int seq_num, int ack_num, int payload_size,const void *data, bool flags[] );
 #endif

@@ -1,9 +1,45 @@
 #include "gbn.h"
+state client_state;
+state server_state;
+//------------------- CLIENT ------------------
 //OVERVIEW OF THE CLIENT
 // The client opens UDP socket, implements outgoing connection management, and connects to the server.
 // Once connection is established, it sends the content of a file to the server.
 
+//Helper function to generate a random number for ACK Number
+int random_num_generator(){
+    return rand()% MAX_SEQUENCE_NUM + 1; // 
+}
 
+//helper function to initiate the first handshake
+//the client sends a SYN,  waits for SYNACK From the server, then the connection is established
+//then the client send the payload
+//if SYNACK was not received after a while, timeout, it will give up
+int handshake_connection(int sockfd, const struct sockaddr *server, socklen_t socklen){
+    fprintf(stdout, "Starting the first handshake\n");
+    //create a SYN packet
+    packet_info syn_packet;
+    bool flags[false,false,true];
+    //create struct to store the packet received from the server
+    packet_info server_syn_ack_response;
+    memset(&server_syn_ack_response, 0, sizeof(server_syn_ack_response));
+    //try to connect to the server, first handshake
+    int random_seq_num= random_num_generator();
+    if(packet_generator(&syn_packet,random_seq_num,0,0,NULL,flags)<0){
+        fprintf(stderr,"ERROR! Client could not create its SYN Packet\n");
+        return -1;
+    }
+    //send packet to the client
+    if((sendto(sockfd,&syn_packet,sizeof(syn_packet), 0, server, socklen))!=-1){
+        fprintf(stdout, "SEND %d %d SYN\n", random_seq_num, 0);
+        client_state.udp_state=SYN_SENT;
+    }
+    else{
+        fprintf(stderr,"ERROR! Client could not send its SYN Packet\n");
+        return -1;
+    }
+    return 0;
+}
 int main(int argc, char *argv[]){
     int sockfd; 
     socklen_t socklen;
@@ -18,7 +54,7 @@ int main(int argc, char *argv[]){
     }
     int port= atoi(argv[2]);
     //open the file, non-text file
-    if((file= fopen(argv[3],"rb"))==NULL){
+    if((file= fopen(argv[3],"r"))==NULL){
         fprintf(stderr, "ERROR! Could not open the desired file!");
         exit(-1);
     }
@@ -41,7 +77,11 @@ int main(int argc, char *argv[]){
     servaddr.sin_addr =  *(struct in_addr *)resolved_hostname->h_addr;//host-name :what specified by the user as <HOSTNAME-OR-IP>
     //initiate the handshake
     //transmitting a SYN packet and waiting for an SYNACK packet
-
+    //------------------------ SENDING THE FIRST HANDSHAKE --------------------
+    if(handshake_connection(sockfd,(struct sockaddr *)&servaddr, socklen)==-1){
+        fprintf(stderr, "ERROR! Could not init the first handshake\n");
+        exit(-1);
+    }
       
     
   

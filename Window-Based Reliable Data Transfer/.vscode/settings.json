@@ -1,5 +1,9 @@
 {
     "files.associations": {
-        "string.h": "c"
+        "string.h": "c",
+        "locale": "cpp",
+        "string": "cpp",
+        "__config": "cpp",
+        "type_traits": "cpp"
     }
 }
