@@ -1,44 +1,50 @@
 #include "gbn.h"
 state client_state;
 state server_state;
+packet_info server_packet_response; //to store server response packet info
 //------------------- CLIENT ------------------
 //OVERVIEW OF THE CLIENT
 // The client opens UDP socket, implements outgoing connection management, and connects to the server.
 // Once connection is established, it sends the content of a file to the server.
-
+#define MAX_NUMBER_OF_ATTEMPTS 10
 //Helper function to generate a random number for ACK Number
 int random_num_generator(){
     return rand()% MAX_SEQUENCE_NUM + 1; // 
 }
-
 //helper function to initiate the first handshake
 //the client sends a SYN,  waits for SYNACK From the server, then the connection is established
 //then the client send the payload
 //if SYNACK was not received after a while, timeout, it will give up
 int handshake_connection(int sockfd, const struct sockaddr *server, socklen_t socklen){
     fprintf(stdout, "Starting the first handshake\n");
+    int sender_counter=0;
     //create a SYN packet
     packet_info syn_packet;
     bool flags[false,false,true];
     //create struct to store the packet received from the server
-    packet_info server_syn_ack_response;
-    memset(&server_syn_ack_response, 0, sizeof(server_syn_ack_response));
+    
     //try to connect to the server, first handshake
     int random_seq_num= random_num_generator();
-    if(packet_generator(&syn_packet,random_seq_num,0,0,NULL,flags)<0){
+    if(packet_generator(&syn_packet,random_seq_num,INIT_ACK_NUM,0,NULL,flags)<0){
         fprintf(stderr,"ERROR! Client could not create its SYN Packet\n");
         return -1;
     }
-    //send packet to the client
-    if((sendto(sockfd,&syn_packet,sizeof(syn_packet), 0, server, socklen))!=-1){
-        fprintf(stdout, "SEND %d %d SYN\n", random_seq_num, 0);
-        client_state.udp_state=SYN_SENT;
+    //keep trying for max 10 times to send SYN packet
+    while(sender_counter< MAX_NUMBER_OF_ATTEMPTS){
+        //send packet to the client
+        if((sendto(sockfd,&syn_packet,sizeof(syn_packet), 0, server, socklen))!=-1){
+            fprintf(stdout, "SEND %d %d SYN\n", random_seq_num, INIT_ACK_NUM);
+            client_state.udp_state=SYN_SENT;
+            return 0;
+        }
+        else{
+            fprintf(stderr,"ERROR! Client could not send its SYN Packet for the %d time\n", sender_counter+1);
+        }
+        sender_counter++;
+        //wait for a sec
+        sleep(1);
     }
-    else{
-        fprintf(stderr,"ERROR! Client could not send its SYN Packet\n");
-        return -1;
-    }
-    return 0;
+    return -1;
 }
 int main(int argc, char *argv[]){
     int sockfd; 

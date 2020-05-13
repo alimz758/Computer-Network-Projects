@@ -21,7 +21,7 @@
 #define CLIENT 1
 #define SERVER 2
 //Client sends and ACK_NUM=0 for the first hand-shake
-#define INIT_ACK 0
+#define INIT_ACK_NUM 0
 //needs to be 12bytes
 struct packet_header{
     int sequence_num; 
