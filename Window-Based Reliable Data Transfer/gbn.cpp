@@ -19,3 +19,17 @@ int packet_generator(packet_info *packet, int seq_num, int ack_num, int payload_
     }
     return 0;
 }
+//helper function to clear the packet
+void clear_packet(packet_header *packet){
+    memset(packet, 0, sizeof(*packet));
+}
+//Helper function to generate a random number for ACK Number
+int random_num_generator(){
+    return rand()% MAX_SEQUENCE_NUM + 1; // 
+}
+// Logic of the timer
+// setTimer(time period): Record the time out time point
+// Bool <- isTimeout(): Compare the current time with the time out time point. If smaller, return false; if equal or larger, return true
+// How to get current time?
+// C++11 or higher
+// auto now =std::chrono::high_resolution_clock::now();

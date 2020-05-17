@@ -46,3 +46,7 @@ http://man7.org/linux/man-pages/man3/gethostbyname.3.html
 For sending packets:
 
 https://linux.die.net/man/2/sendto
+
+For receiving the packet:
+
+https://linux.die.net/man/2/recvfrom

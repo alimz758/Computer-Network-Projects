@@ -11,10 +11,11 @@
 #include <fcntl.h>
 #include <dirent.h>
 #include <netdb.h>
+#include <iostream>
 #include<time.h>
 #define MAX_PAYLOAD_SIZE 512
 #define MAX_SEQUENCE_NUM 25600
-#define MAX_RTO 500 //in msec
+#define TIMEOUT 0.5 //0.5 sec
 #define WINDOW_SIZE 5120 
 #define BUFFER_SIZE 1024
 // ROLES
@@ -63,4 +64,6 @@ enum {
 
 
 int packet_generator(packet_info *packet, int seq_num, int ack_num, int payload_size,const void *data, bool flags[] );
+void clear_packet(packet_header *);
+int random_num_generator();
 #endif

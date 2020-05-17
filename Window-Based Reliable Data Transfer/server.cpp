@@ -1,3 +1,8 @@
+// Server side logic
+// If a SYN packet, reply with packet with SYN flag and ACK flag, set ACK number field and sequence number field
+// If a data packet, write data field to file
+// If a FIN packet, reply with packet with ACK flag. Then send a packet with FIN flag. After receive ACK from client, close the connection.
+
 #include "gbn.h"
 int sockfd, new_socket;
 void sig_handler(int signo) {
@@ -6,6 +11,37 @@ void sig_handler(int signo) {
     close(new_socket);
     printf("Recieved SIGINT\n");
   }
+}
+//helper function for the server to send ACK 
+int server_handshake(int sockfd, struct sockaddr *client, socklen_t *socklen){
+    //struct for storing the client respons
+    packet_header client_response;
+    clear_packet(&client_response);
+    while(1){
+        if((recvfrom(sockfd, (char *)&client_response, sizeof(packet_header), 0, client, socklen))==-1){
+            fprintf(stderr, "ERROR! The server failed to receive the client's message\n");
+        }
+        //recerived SYN from the server
+        else if(client_response.syn_flag==true){
+            packet_info synack_packet;
+            bool flags[true, false, true];
+            int seq_num= random_num_generator();
+            //generating the SYNACK Packet
+            if(packet_generator(&synack_packet,seq_num,client_response.ack_num+1,0, NULL, flags )){
+                fprintf(stderr, "ERROR! Generating SYNACK failed\n");
+            }
+            //Sending the packet to the client
+            if ((sendto(sockfd, &synack_packet, sizeof(synack_packet), 0, client, *socklen)) == -1) {
+                fprintf(stderr, "ERROR! Server failed to send SYNACK \n");
+            } else {
+                printf("SEND %d %d SYN ACK\n", seq_num,client_response.ack_num+1);
+                return sockfd;
+            }
+
+        }
+    
+    }
+    return -1;
 }
 //------------------- SERVER ------------------
 int main(int argc, char *argv[]){
@@ -55,10 +91,13 @@ int main(int argc, char *argv[]){
     }
     //Waiting for the client to connect 
     socklen = sizeof(struct sockaddr_in);
-    //TODO: RECVE SYN, SEND SYNACK
-    if((new_socket = accept(sockfd, (struct sockaddr *)&client_socket, &socklen))==-1){
-        fprintf(stderr, "ERROR! Could not bind the address\n");
+    int new_sockfd;
+    //waiting for the client to connect 
+    if((new_sockfd =server_handshake(sockfd, (struct sockaddr *)&client_socket, &socklen))==-1){
+        fprintf(stderr,"ERROR! Server could not establish the onnection with the client\n");
         exit(EXIT_FAILURE); 
     }
+    //At this ponint connection is established so start receiving data
+   
     return 0;
 }
