@@ -16,7 +16,7 @@
 #define MAX_PAYLOAD_SIZE 512
 #define MAX_SEQUENCE_NUM 25600
 #define TIMEOUT 0.5 //0.5 sec
-#define WINDOW_SIZE 5120 
+#define MAX_WINDOW_SIZE 5120 
 #define BUFFER_SIZE 1024
 // ROLES
 #define CLIENT 1
@@ -30,7 +30,7 @@ struct packet_header{
     bool ack_flag,
         syn_flag,
         fin_flag;
-    bool nothing=false; //just for padding pusposes to be 12-bytes
+    bool nothing; //just for padding pusposes to be 12-bytes
 };
 //packet info 524 bytes including the payload
 typedef struct packet_info{
@@ -61,8 +61,6 @@ enum {
 	FIN_SENT,
 	FIN_RCVD
 };
-
-
 int packet_generator(packet_info *packet, int seq_num, int ack_num, int payload_size,const void *data, bool flags[] );
 void clear_packet(packet_header *);
 int random_num_generator();

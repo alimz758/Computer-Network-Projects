@@ -4,15 +4,15 @@
 // After transmitting the entire file, send FIN packet and wait for ACK.
 // After receive server FIN, send ACK and wait for 2 seconds to close the connection.
 #include "gbn.h"
-state client_state;
-state server_state;
 packet_header server_packet_response; //to store server response packet info
+char send_buffer_packet[MAX_PAYLOAD_SIZE * MAX_WINDOW_SIZE];
 //------------------- CLIENT ------------------
 //OVERVIEW OF THE CLIENT
 // The client opens UDP socket, implements outgoing connection management, and connects to the server.
 // Once connection is established, it sends the content of a file to the server.
 #define MAX_NUMBER_OF_ATTEMPTS 10
-
+state client_state;
+state server_state;
 
 //helper function to initiate the first handshake
 //the client sends a SYN,  waits for SYNACK From the server, then the connection is established
@@ -23,7 +23,7 @@ int handshake_connection(int sockfd, struct sockaddr *server, socklen_t socklen)
     int sender_counter=0;
     //create a SYN packet
     packet_info syn_packet;
-    bool flags[false,false,true];
+    bool flags[3]={false,false,true};
     //create struct to store the packet received from the server
     clear_packet(&server_packet_response);
     //try to connect to the server, first handshake
@@ -62,10 +62,14 @@ int handshake_connection(int sockfd, struct sockaddr *server, socklen_t socklen)
     fprintf(stderr, "The client faild to send SYN after 10 attempts.\n");
     return -1;
 }
+//helper fucntion to send data packets after establishing 
+int send_data_packet(int sockfd, const void * send_buffer_packet,size_t len){
+    printf("%zu",len);
+    return 0;
+}
 int main(int argc, char *argv[]){
     int sockfd; 
     socklen_t socklen;
-    char buffer[BUFFER_SIZE]; 
     struct sockaddr_in  servaddr; 
     struct hostent *resolved_hostname;  /* structure for resolving names into IP addresses */
     socklen = sizeof(struct sockaddr);
@@ -105,6 +109,15 @@ int main(int argc, char *argv[]){
         exit(-1);
     }
     //Pipelining and sending the file
+    //size_t fread ( void * ptr, size_t size, size_t count, FILE * stream );
+    //Read block of data from stream
+    int len;
+    if((len=fread(send_buffer_packet,1,MAX_PAYLOAD_SIZE * MAX_WINDOW_SIZE, file))>0){
+        if((send_data_packet(sockfd, send_buffer_packet,len)==-1)){
+            fprintf(stderr, "ERROR! Failed to send the data packet\n");
+            exit(-1);
+        }
+    }
 
     //closing connection
       

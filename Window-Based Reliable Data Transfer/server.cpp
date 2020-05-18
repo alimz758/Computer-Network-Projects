@@ -12,6 +12,10 @@ void sig_handler(int signo) {
     printf("Recieved SIGINT\n");
   }
 }
+state client_state;
+state server_state;
+//to be used on the server for saving the file as CONNECTION-ORDER.file
+int connection_number=0;
 //helper function for the server to send ACK 
 int server_handshake(int sockfd, struct sockaddr *client, socklen_t *socklen){
     //struct for storing the client respons
@@ -21,10 +25,10 @@ int server_handshake(int sockfd, struct sockaddr *client, socklen_t *socklen){
         if((recvfrom(sockfd, (char *)&client_response, sizeof(packet_header), 0, client, socklen))==-1){
             fprintf(stderr, "ERROR! The server failed to receive the client's message\n");
         }
-        //recerived SYN from the server
-        else if(client_response.syn_flag==true){
+        //check that whether it's a SYN and client SEQ_NUM +1 is indeed the expexted number
+        else if(client_response.syn_flag ==true ){
             packet_info synack_packet;
-            bool flags[true, false, true];
+            bool flags[3]={true, false, true};
             int seq_num= random_num_generator();
             //generating the SYNACK Packet
             if(packet_generator(&synack_packet,seq_num,client_response.ack_num+1,0, NULL, flags )){
@@ -37,11 +41,17 @@ int server_handshake(int sockfd, struct sockaddr *client, socklen_t *socklen){
                 printf("SEND %d %d SYN ACK\n", seq_num,client_response.ack_num+1);
                 return sockfd;
             }
-
         }
-    
     }
     return -1;
+}
+//Init the server state for listenting and ready to get packet nums
+int server_listen(int sockfd){
+    memset(&server_state, 0, sizeof(server_state));
+    server_state.udp_state=LISTENING;
+    server_state.udp_role=SERVER;
+    server_state.next_expected_pack_num=1;
+    return 0;
 }
 //------------------- SERVER ------------------
 int main(int argc, char *argv[]){
@@ -54,13 +64,13 @@ int main(int argc, char *argv[]){
     char * file_name=NULL;
     socklen_t socklen;
 
-    if (argc !=3 ) {
-        fprintf(stderr, "ERROR! Please make sure to follow the following format: ./client <port> <filename>\n \n");
+    if (argc <2 ) {
+        fprintf(stderr, "ERROR! Please make sure to follow the following format for the server: ./server <port>\n \n");
         exit(1);
     }
-    int port= atoi(argv[1]);;
+    int port= atoi(argv[1]);
     printf("\n\n\t\t\tSERVING ON PORT: %d\n\n", port);
-    int backlog=1;
+    int backlog=10;
     signal(SIGINT, sig_handler);
     //struct to be used for biding
     struct sockaddr_in server_socket, client_socket;
@@ -85,7 +95,7 @@ int main(int argc, char *argv[]){
     }
     //The listen system call tells a socket that it should be capable of accepting incoming connections
     //The second parameter, backlog, defines the maximum number of pending connections that can be queued up before connections are refused.
-    if (listen(sockfd, backlog) < 0) { 
+    if (server_listen(sockfd) < 0) { 
         fprintf(stderr,"ERROR! Could not listen to the socket\n");
         exit(EXIT_FAILURE); 
     }
