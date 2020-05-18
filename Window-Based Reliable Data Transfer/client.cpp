@@ -41,6 +41,7 @@ int handshake_connection(int sockfd, struct sockaddr *server, socklen_t socklen)
             client_state.udp_state=SYN_SENT;
             //WAITING FOR SYNACK from the server
             //Call the helper function to check whether recieved SYNACK from the server
+            //TODO SET A TIMER
             if((recvfrom(sockfd, (char *)&server_packet_response, sizeof(server_packet_response), 0, server, &socklen))==-1){
                 fprintf(stderr, "ERROR! The client did not receive the SYNACK Packet from the server!\n");
             }
@@ -49,6 +50,9 @@ int handshake_connection(int sockfd, struct sockaddr *server, socklen_t socklen)
                 //format: RECV SeqNum AckNumi [SYN] [FIN] [ACK]
                 fprintf(stdout, "RECV %d %d SYN ACK\n", server_packet_response.sequence_num, server_packet_response.ack_num);
                 client_state.udp_state = ESTABLISHED;
+                //set the client's SEQ and ACK fields for the transmission datas
+                client_state.seq_num= server_packet_response.ack_num;
+                client_state.ack_num=server_packet_response.sequence_num+1;
                 return 0;
             }
         }
@@ -63,8 +67,42 @@ int handshake_connection(int sockfd, struct sockaddr *server, socklen_t socklen)
     return -1;
 }
 //helper fucntion to send data packets after establishing 
-int send_data_packet(int sockfd, const void * send_buffer_packet,size_t len){
-    printf("%zu",len);
+int send_data_packet(int sockfd, const char * send_buffer_packet,size_t len){
+    printf(" fread result %zu",len);
+    //store how many bites will be stored for the last packet
+    int last_payload_len = len % MAX_PAYLOAD_SIZE;
+    //the base number in GBN SWS
+    int window_base_num =1;
+    int number_of_packets_needed;
+    if(last_payload_len==0){
+        number_of_packets_needed = len / MAX_PAYLOAD_SIZE;
+    }
+    else{
+        number_of_packets_needed = (len / MAX_PAYLOAD_SIZE)+1;
+    }
+    //creating each packets data buffer
+    int counter;
+    int packet_offset= 0;
+    bool flags[3]={true,false,false};
+    //clear the packet buffer tracker of the client
+    memset(client_state.packet_buffer_tracker,0, sizeof(client_state.packet_buffer_tracker));
+    //genereate each data packet header and data_payload
+    for(counter=0; counter< number_of_packets_needed; counter++){
+        packet_info data_packet;
+        //if the last packet
+        if(counter +1 == number_of_packets_needed && last_payload_len!=0){
+            packet_generator(&data_packet,client_state.seq_num, client_state.ack_num,last_payload_len, send_buffer_packet+ packet_offset,flags );
+        }
+        //not the last packet
+        else{
+            packet_generator(&data_packet,client_state.seq_num, client_state.ack_num,MAX_PAYLOAD_SIZE, send_buffer_packet+ packet_offset,flags );
+            //increase the offset by 512B for the next packet
+            packet_offset+= MAX_PAYLOAD_SIZE;
+        }
+        //set each client_packet's data
+        client_state.packet_buffer_tracker[counter]= data_packet;
+    }
+    //start sending packets to the server
     return 0;
 }
 int main(int argc, char *argv[]){
@@ -118,7 +156,6 @@ int main(int argc, char *argv[]){
             exit(-1);
         }
     }
-
     //closing connection
       
     

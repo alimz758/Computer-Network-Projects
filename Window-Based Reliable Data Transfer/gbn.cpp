@@ -4,9 +4,10 @@
 int packet_generator(packet_info *packet, int seq_num, int ack_num, int payload_size,const void *data, bool flags[3] ){
     //first check whether the packet_data_lenght is noth freater than 512 bytes
     if(payload_size > MAX_PAYLOAD_SIZE){
+        fprintf(stderr, "ERROR! The payload size is greater than 512B\n");
         return -1;
     }
-    //clear the packet from the previous call before
+    //clear the packet from the previous call 
     memset(packet, 0, sizeof(*packet));
     //start structring the packet
     packet->packet_header_pointer->sequence_num= seq_num;

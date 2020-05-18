@@ -4,11 +4,11 @@
 // If a FIN packet, reply with packet with ACK flag. Then send a packet with FIN flag. After receive ACK from client, close the connection.
 
 #include "gbn.h"
-int sockfd, new_socket;
+int sockfd, new_sockfd;
 void sig_handler(int signo) {
   if (signo == SIGINT) {
     close(sockfd);
-    close(new_socket);
+    close(new_sockfd);
     printf("Recieved SIGINT\n");
   }
 }
@@ -24,6 +24,7 @@ int server_handshake(int sockfd, struct sockaddr *client, socklen_t *socklen){
     while(1){
         if((recvfrom(sockfd, (char *)&client_response, sizeof(packet_header), 0, client, socklen))==-1){
             fprintf(stderr, "ERROR! The server failed to receive the client's message\n");
+            continue;
         }
         //check that whether it's a SYN and client SEQ_NUM +1 is indeed the expexted number
         else if(client_response.syn_flag ==true ){
@@ -101,7 +102,6 @@ int main(int argc, char *argv[]){
     }
     //Waiting for the client to connect 
     socklen = sizeof(struct sockaddr_in);
-    int new_sockfd;
     //waiting for the client to connect 
     if((new_sockfd =server_handshake(sockfd, (struct sockaddr *)&client_socket, &socklen))==-1){
         fprintf(stderr,"ERROR! Server could not establish the onnection with the client\n");

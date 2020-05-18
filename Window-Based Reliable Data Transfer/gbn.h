@@ -14,13 +14,14 @@
 #include <iostream>
 #include<time.h>
 #define MAX_PAYLOAD_SIZE 512
-#define MAX_SEQUENCE_NUM 25600
+#define MAX_SEQUENCE_NUM 25600 //as desired by the assignment
 #define TIMEOUT 0.5 //0.5 sec
-#define MAX_WINDOW_SIZE 5120 
+#define MAX_WINDOW_SIZE 5120  //10 packets per window
 #define BUFFER_SIZE 1024
 // ROLES
 #define CLIENT 1
 #define SERVER 2
+#define SWS 10
 //Client sends and ACK_NUM=0 for the first hand-shake
 #define INIT_ACK_NUM 0
 //needs to be 12bytes
@@ -46,10 +47,13 @@ typedef struct state {
     struct sockaddr_storage server;
     struct sockaddr *server_ptr;
     socklen_t dest_socklen;
-    int next_expected_pack_num;  /* Server/Receiver: packet number after the highest in sequence packet  */
-    int window_start;            /* Client/Sender: the highest packet number that server has not yet DATAACKED */
+    int next_expected_pack_num;  
+    int window_start;            //the highest packet number that server has not yet ACKED */
     int recv_ack_timeout_count;
+    int seq_num;
+    int ack_num;
     int window_size;
+    packet_info packet_buffer_tracker[10]; // keeps track of packets , 10 packets per window
 }state;
 //different modes
 enum {
