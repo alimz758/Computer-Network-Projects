@@ -48,12 +48,13 @@ typedef struct state {
     struct sockaddr *server_ptr;
     socklen_t dest_socklen;
     int next_expected_pack_num;  
-    int window_start;            //the highest packet number that server has not yet ACKED */
+    //the base number in GBN SWS
+    int window_base_num ;   
     int recv_ack_timeout_count;
     int seq_num;
     int ack_num;
-    int window_size;
-    packet_info packet_buffer_tracker[10]; // keeps track of packets , 10 packets per window
+    int packet_num;
+    packet_info packet_buffer_tracker[MAX_WINDOW_SIZE]; //TODO: NEED TO FIX THIS TO HOLD EXACTLY WHAT YOU NEED
 }state;
 //different modes
 enum {
