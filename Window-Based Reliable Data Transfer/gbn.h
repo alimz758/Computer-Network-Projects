@@ -13,6 +13,8 @@
 #include <netdb.h>
 #include <iostream>
 #include<time.h>
+#include <chrono>
+#include "timer.cpp"
 #define MAX_PAYLOAD_SIZE 512
 #define MAX_SEQUENCE_NUM 25600 //as desired by the assignment
 #define TIMEOUT 0.5 //0.5 sec
@@ -64,7 +66,8 @@ enum {
 	SYN_RCVD,
 	ESTABLISHED,
 	FIN_SENT,
-	FIN_RCVD
+	FIN_RCVD,
+    ACK_SENT
 };
 int packet_generator(packet_info *packet, int seq_num, int ack_num, int payload_size,const void *data, bool flags[] );
 void clear_packet(packet_header *);

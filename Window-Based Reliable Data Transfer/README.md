@@ -50,3 +50,7 @@ https://linux.die.net/man/2/sendto
 For receiving the packet:
 
 https://linux.die.net/man/2/recvfrom
+
+For the timer I used the following:
+
+https://gist.github.com/mcleary/b0bf4fa88830ff7c882d
