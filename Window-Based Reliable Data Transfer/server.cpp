@@ -47,7 +47,7 @@ int server_handshake(int sockfd, struct sockaddr *client, socklen_t *socklen){
     return -1;
 }
 //Init the server state for listenting and ready to get packet nums
-int server_listen(int sockfd){
+int server_listen(){
     memset(&server_state, 0, sizeof(server_state));
     server_state.udp_state=LISTENING;
     server_state.udp_role=SERVER;
@@ -57,25 +57,16 @@ int server_listen(int sockfd){
 //------------------- SERVER ------------------
 int main(int argc, char *argv[]){
     //initializing to variables ti read the clients message
-    struct stat stat;
-    long read_value;
-    int file_descriptor;
-    int message_size=1024;
-    char client_buffer_message[message_size];
-    char * file_name=NULL;
     socklen_t socklen;
-
     if (argc <2 ) {
         fprintf(stderr, "ERROR! Please make sure to follow the following format for the server: ./server <port>\n \n");
         exit(1);
     }
     int port= atoi(argv[1]);
     printf("\n\n\t\t\tSERVING ON PORT: %d\n\n", port);
-    int backlog=10;
     signal(SIGINT, sig_handler);
     //struct to be used for biding
     struct sockaddr_in server_socket, client_socket;
-    socklen_t address_len;
     //open to listen 
     sockfd =socket(AF_INET, SOCK_DGRAM, 0);
     if(sockfd<0){
@@ -96,7 +87,7 @@ int main(int argc, char *argv[]){
     }
     //The listen system call tells a socket that it should be capable of accepting incoming connections
     //The second parameter, backlog, defines the maximum number of pending connections that can be queued up before connections are refused.
-    if (server_listen(sockfd) < 0) { 
+    if (server_listen() < 0) { 
         fprintf(stderr,"ERROR! Could not listen to the socket\n");
         exit(EXIT_FAILURE); 
     }

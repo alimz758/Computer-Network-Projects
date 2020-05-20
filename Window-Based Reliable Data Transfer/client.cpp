@@ -77,7 +77,7 @@ int data_packet_recv(int sockfd){
     //TODO HANDLE DUP-ACK TO RESEND WITH APPROPRAITE
 
     //Turn off non-blocking mode (i.e. make recvfrom blocking again) */
-    int flag_control = fcntl(sockfd, F_SETFL, 0);
+    fcntl(sockfd, F_SETFL, 0);
     //create a place to store server_packet header
     packet_header server_response;
     clear_packet(&server_response);
@@ -240,9 +240,9 @@ int client_send_fin_packet(int sockfd){
     }
     //genereate the Client's ACK after receivinf FIN from the server
     packet_info client_ack_closing;
-    int flags[3]={true, false,false};
+    bool flags1[3]={true, false,false};
     //generating the ACK packet
-    packet_generator(&client_ack_closing,client_state.seq_num, client_state.ack_num,0, NULL,flags);
+    packet_generator(&client_ack_closing,client_state.seq_num, client_state.ack_num,0, NULL,flags1);
     Timer Time;
     while(true){
         clear_packet(&server_response);
@@ -266,7 +266,7 @@ int client_send_fin_packet(int sockfd){
             }
         }
         //when 2 seconds elapsed
-        else if(Time.elapsedSeconds==2){
+        else if(Time.elapsedSeconds()==2){
             Time.reset();
             client_state.udp_state=CLOSED;
             break;
