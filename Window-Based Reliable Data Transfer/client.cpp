@@ -87,10 +87,10 @@ int data_packet_recv(int sockfd){
         return -1;
     }
     //if receive ack  for data packet and the ACK number is what we expected then
-    else if(server_response.ack_flag==true && client_state.next_expected_pack_num == server_response.ack_num){
+    else if(server_response.ack_flag==true && client_state.next_expected_ack_num == server_response.ack_num){
         fprintf(stdout,"The client received  ACK: %d", server_response.ack_num);
         //increase the client expected num
-        client_state.next_expected_pack_num+=MAX_PAYLOAD_SIZE;
+        client_state.next_expected_ack_num+=MAX_PAYLOAD_SIZE;
         return 0;
     }
     //for DUP-ACK or TIMEOUT return
@@ -121,11 +121,11 @@ int send_data_packet(int sockfd, const char * send_buffer_packet,size_t len){
     bool no_flags[3]={false,false,false};
     //clear the packet buffer tracker of the client
     memset(client_state.packet_buffer_tracker,0, sizeof(client_state.packet_buffer_tracker));
-    //send the first DATA_PACKET with SEQ_NUM AS THE SAME AS THE ACK_NUM it received
-    packet_generator(&data_packet,client_state.seq_num , client_state.ack_num,last_payload_len, send_buffer_packet+ packet_offset,ack_flags );
+    //send the FIRST DATA_PACKET with SEQ_NUM AS THE SAME AS THE ACK_NUM it received
+    packet_generator(&data_packet,client_state.seq_num , client_state.ack_num, number_of_packets_needed==1? last_payload_len: MAX_PAYLOAD_SIZE, send_buffer_packet+ packet_offset,ack_flags );
     client_state.packet_buffer_tracker[0]= data_packet;
     //set the client expexted number with should receive ACK with the SEQ it sent
-    client_state.next_expected_pack_num = client_state.seq_num;
+    client_state.next_expected_ack_num = client_state.seq_num;
     //genereate each data packet header and data_payload
     for(counter=1; counter< number_of_packets_needed; counter++){
         //for the last packet, increase the SEQ_NUM exactly as it is needed instead of 512
@@ -205,14 +205,12 @@ int client_send_fin_packet(int sockfd){
     //retrieve the  server info
     struct sockaddr* server = client_state.server_ptr;
     socklen_t socklen = client_state.dest_socklen;
-    //try sending
-    int min_attempt=0;
-    int max_attempt=100;
     //try sending the FIN packet
-    while(min_attempt<max_attempt){
+    int try_counter=1;
+    while(true){
         if ((sendto(sockfd, &fin_packet, sizeof(packet_info), 0, server, socklen)) == -1){
-            fprintf(stderr, "ERROR! The client could not send its FIN Packet\n");
-            min_attempt++;
+            fprintf(stderr, "ERROR! The client could not send its FIN Packet, try #%d\n", try_counter);
+            try_counter++;
         }
         else {
             printf("SEND %d 0 FIN\n", client_state.seq_num);
@@ -227,16 +225,16 @@ int client_send_fin_packet(int sockfd){
             break;
         }
     }
-    //waitinf to receive first ACK , then FIN from the server
+    //waiting to receive first ACK , then FIN from the server
     while(true){
         if((recvfrom(sockfd, &server_response, sizeof(packet_header), 0, server, &socklen))==-1){
             fprintf(stderr, "ERROR! The client failed in receiving the ACK after sending its FIN\n");
         }
         else if(server_response.ack_flag==true){
             printf("RECV %d %d ACK\n", server_response.sequence_num, server_response.ack_num);
+            client_state.udp_state= ACK_RCVD;
             break;
         }
-        min_attempt++;
     }
     //genereate the Client's ACK after receivinf FIN from the server
     packet_info client_ack_closing;
@@ -252,6 +250,7 @@ int client_send_fin_packet(int sockfd){
         }
         else if(server_response.fin_flag==true){
             printf("RECV %d %d FIN\n", server_response.sequence_num, server_response.ack_num);
+            client_state.udp_state= FIN_RCVD;
             //stert the timer
             Time.start();
             //wait for FIN from the server
@@ -266,6 +265,7 @@ int client_send_fin_packet(int sockfd){
             }
         }
         //when 2 seconds elapsed
+        //stop the timer and close the client side connection
         else if(Time.elapsedSeconds()==2){
             Time.reset();
             client_state.udp_state=CLOSED;

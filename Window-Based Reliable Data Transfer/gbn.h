@@ -49,7 +49,7 @@ typedef struct state {
     struct sockaddr_storage server;
     struct sockaddr *server_ptr;
     socklen_t dest_socklen;
-    int next_expected_pack_num;  
+    int next_expected_ack_num;  
     //the base number in GBN SWS
     int window_base_num ;   
     int recv_ack_timeout_count;
@@ -67,7 +67,9 @@ enum {
 	ESTABLISHED,
 	FIN_SENT,
 	FIN_RCVD,
-    ACK_SENT
+    ACK_SENT,
+    ACK_RCVD,
+    SYN_ACK_SENT
 };
 int packet_generator(packet_info *packet, int seq_num, int ack_num, int payload_size,const void *data, bool flags[] );
 void clear_packet(packet_header *);

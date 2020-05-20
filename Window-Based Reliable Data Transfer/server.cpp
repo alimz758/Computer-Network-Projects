@@ -21,7 +21,7 @@ int server_handshake(int sockfd, struct sockaddr *client, socklen_t *socklen){
     //struct for storing the client respons
     packet_header client_response;
     clear_packet(&client_response);
-    while(1){
+    while(true){
         if((recvfrom(sockfd, (char *)&client_response, sizeof(packet_header), 0, client, socklen))==-1){
             fprintf(stderr, "ERROR! The server failed to receive the client's message\n");
             continue;
@@ -30,16 +30,22 @@ int server_handshake(int sockfd, struct sockaddr *client, socklen_t *socklen){
         else if(client_response.syn_flag ==true ){
             packet_info synack_packet;
             bool flags[3]={true, false, true};
-            int seq_num= random_num_generator();
+            //initialize a random SEQ_number for the server 
+            server_state.seq_num= random_num_generator();
+            //store the Server's ACK num
+            server_state.ack_num= client_response.sequence_num +1;
             //generating the SYNACK Packet
-            if(packet_generator(&synack_packet,seq_num,client_response.ack_num+1,0, NULL, flags )){
+            if(packet_generator(&synack_packet,server_state.seq_num,server_state.ack_num,0, NULL, flags )){
                 fprintf(stderr, "ERROR! Generating SYNACK failed\n");
             }
             //Sending the packet to the client
             if ((sendto(sockfd, &synack_packet, sizeof(synack_packet), 0, client, *socklen)) == -1) {
                 fprintf(stderr, "ERROR! Server failed to send SYNACK \n");
             } else {
-                printf("SEND %d %d SYN ACK\n", seq_num,client_response.ack_num+1);
+                printf("SEND %d %d SYN ACK\n", server_state.seq_num,server_state.ack_num);
+                server_state.udp_state=SYN_ACK_SENT;
+                //store the next expected ACK number that the server should expect from the client for the next packet
+                server_state.next_expected_ack_num= server_state.seq_num+1;
                 return sockfd;
             }
         }
@@ -51,15 +57,28 @@ int server_listen(){
     memset(&server_state, 0, sizeof(server_state));
     server_state.udp_state=LISTENING;
     server_state.udp_role=SERVER;
-    server_state.next_expected_pack_num=1;
+    server_state.next_expected_ack_num=1;
+    return 0;
+}
+//helper function to receive Data Packets from the server
+int data_packet_recv(int sockfd, void *buf){
+    //clear the buf from the  previous call
+    memset(buf,0, MAX_PAYLOAD_SIZE);
+    //retrieve the client's info
+    struct sockaddr* client = server_state.client_ptr;
+    socklen_t socklen = server_state.dest_socklen;
     return 0;
 }
 //------------------- SERVER ------------------
 int main(int argc, char *argv[]){
     //initializing to variables ti read the clients message
     socklen_t socklen;
+    int read_val;
+    int output_file_saver_counter=1;
+    FILE *output_file;
+    char data_packet_buf[MAX_PAYLOAD_SIZE];
     if (argc <2 ) {
-        fprintf(stderr, "ERROR! Please make sure to follow the following format for the server: ./server <port>\n \n");
+        fprintf(stderr, "ERROR! Please make sure to follow the following format: ./server <port>\n");
         exit(1);
     }
     int port= atoi(argv[1]);
@@ -71,6 +90,7 @@ int main(int argc, char *argv[]){
     sockfd =socket(AF_INET, SOCK_DGRAM, 0);
     if(sockfd<0){
         printf("ERROR! Could not open a socket\n");
+        exit(EXIT_FAILURE); 
     }
     //fill the details
     memset((char *)&server_socket, 0, sizeof(server_socket)); 
@@ -84,6 +104,7 @@ int main(int argc, char *argv[]){
     int binding_socket = bind(sockfd, (struct sockaddr *) &server_socket, sizeof(server_socket));
     if(binding_socket<0){
         fprintf( stderr,"ERROR! Could not bind the socket\n");
+        exit(EXIT_FAILURE); 
     }
     //The listen system call tells a socket that it should be capable of accepting incoming connections
     //The second parameter, backlog, defines the maximum number of pending connections that can be queued up before connections are refused.
@@ -99,6 +120,32 @@ int main(int argc, char *argv[]){
         exit(EXIT_FAILURE); 
     }
     //At this ponint connection is established so start receiving data
-   
+    //start  receiving data packets
+    std::string file_name =  std::to_string(output_file_saver_counter) + ".file";
+    const char * char_type_file_name = file_name.c_str();
+    printf("file name: %s \n",file_name);
+    //open file, <connection_num>.file to write
+    if((output_file= fopen(char_type_file_name, "w"))==NULL){
+        fprintf(stderr, "ERROR! Could not open file to write on the server side\n");
+        exit(EXIT_FAILURE);
+    }
+    while(true){
+        if((read_val=data_packet_recv(new_sockfd,data_packet_buf))==-1){
+            fprintf(stderr,"ERROR! The server failed in receiving the Data Packets from the client\n");
+            exit(EXIT_FAILURE);
+        }
+        else if(read_val==0){
+            break;
+        }
+        //write form the data_buffer to the stream
+        fwrite(data_packet_buf, 1, read_val, output_file);
+    }
+
+
+    //closing the output file
+    if (fclose(output_file) == EOF){
+        fprintf(stderr,"ERROR! The server could not close the output file stream\n");
+        exit(EXIT_FAILURE);
+    }
     return 0;
 }
