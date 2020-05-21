@@ -22,7 +22,7 @@ int packet_generator(packet_info *packet, int seq_num, int ack_num, int payload_
     return 0;
 }
 //helper function to clear the packet
-void clear_packet(packet_header *packet){
+void clear_packet(packet_info *packet){
     memset(packet, 0, sizeof(*packet));
 }
 //Helper function to generate a random number for ACK Number

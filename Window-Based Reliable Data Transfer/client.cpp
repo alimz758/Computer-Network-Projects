@@ -4,7 +4,7 @@
 // After transmitting the entire file, send FIN packet and wait for ACK.
 // After receive server FIN, send ACK and wait for 2 seconds to close the connection.
 #include "gbn.h"
-packet_header server_packet_response; //to store server response packet info
+packet_info server_packet_response; //to store server response packet info
 char send_buffer_packet[MAX_PAYLOAD_SIZE * MAX_WINDOW_SIZE];
 //------------------- CLIENT ------------------
 //OVERVIEW OF THE CLIENT
@@ -48,17 +48,17 @@ int handshake_connection(int sockfd, struct sockaddr *server, socklen_t socklen)
             //WAITING FOR SYNACK from the server
             //Call the helper function to check whether recieved SYNACK from the server
             //TODO SET A TIMER
-            if((recvfrom(sockfd, (char *)&server_packet_response, sizeof(server_packet_response), 0, server, &socklen))==-1){
+            if((recvfrom(sockfd, (char *)&server_packet_response, sizeof(packet_info), 0, server, &socklen))==-1){
                 fprintf(stderr, "ERROR! The client did not receive the SYNACK Packet from the server!\n");
             }
             //if got the got both SYN and ACK flags
-            else if(server_packet_response.syn_flag == true && server_packet_response.ack_flag == true){
+            else if(server_packet_response.packet_header_pointer->syn_flag == true && server_packet_response.packet_header_pointer->ack_flag == true){
                 //format: RECV SeqNum AckNumi [SYN] [FIN] [ACK]
-                fprintf(stdout, "RECV %d %d SYN ACK\n", server_packet_response.sequence_num, server_packet_response.ack_num);
+                fprintf(stdout, "RECV %d %d SYN ACK\n", server_packet_response.packet_header_pointer->sequence_num, server_packet_response.packet_header_pointer->ack_num);
                 client_state.udp_state = ESTABLISHED;
                 //set the client's SEQ and ACK fields for the transmission datas
-                client_state.seq_num= server_packet_response.ack_num;
-                client_state.ack_num=server_packet_response.sequence_num+1;
+                client_state.seq_num= server_packet_response.packet_header_pointer->ack_num;
+                client_state.ack_num=server_packet_response.packet_header_pointer->sequence_num+1;
                 return 0;
             }
         }
@@ -79,16 +79,16 @@ int data_packet_recv(int sockfd){
     //Turn off non-blocking mode (i.e. make recvfrom blocking again) */
     fcntl(sockfd, F_SETFL, 0);
     //create a place to store server_packet header
-    packet_header server_response;
+    packet_info server_response;
     clear_packet(&server_response);
     //receive the data failed
-    if((recvfrom(sockfd, (char *)&server_response, sizeof(server_response), 0, NULL, NULL))==-1){
+    if((recvfrom(sockfd, (char *)&server_response, sizeof(packet_info), 0, NULL, NULL))==-1){
         fprintf(stderr, "ERROR! RECV failed for data ACK!\n");
         return -1;
     }
     //if receive ack  for data packet and the ACK number is what we expected then
-    else if(server_response.ack_flag==true && client_state.next_expected_ack_num == server_response.ack_num){
-        fprintf(stdout,"The client received  ACK: %d", server_response.ack_num);
+    else if(server_response.packet_header_pointer->ack_flag==true && client_state.next_expected_ack_num == server_response.packet_header_pointer->ack_num){
+        fprintf(stdout,"The client received  ACK: %d", server_response.packet_header_pointer->ack_num);
         //increase the client expected num
         client_state.next_expected_ack_num+=MAX_PAYLOAD_SIZE;
         return 0;
@@ -196,7 +196,7 @@ int send_data_packet(int sockfd, const char * send_buffer_packet,size_t len){
 int client_send_fin_packet(int sockfd){
 
     packet_info fin_packet;
-    packet_header server_response;
+    packet_info server_response;
     clear_packet(&server_response);
     bool flags[3]={false, true, false};
     //create the clietn FIN packet
@@ -230,8 +230,8 @@ int client_send_fin_packet(int sockfd){
         if((recvfrom(sockfd, &server_response, sizeof(packet_header), 0, server, &socklen))==-1){
             fprintf(stderr, "ERROR! The client failed in receiving the ACK after sending its FIN\n");
         }
-        else if(server_response.ack_flag==true){
-            printf("RECV %d %d ACK\n", server_response.sequence_num, server_response.ack_num);
+        else if(server_response.packet_header_pointer->ack_flag==true){
+            printf("RECV %d %d ACK\n", server_response.packet_header_pointer->sequence_num, server_response.packet_header_pointer->ack_num);
             client_state.udp_state= ACK_RCVD;
             break;
         }
@@ -248,13 +248,13 @@ int client_send_fin_packet(int sockfd){
         if((recvfrom(sockfd, &server_response, sizeof(packet_header), 0, server, &socklen))==-1){
             fprintf(stderr, "ERROR! The client failed in receiving the FIN after receiving ACK from the server\n");
         }
-        else if(server_response.fin_flag==true){
-            printf("RECV %d %d FIN\n", server_response.sequence_num, server_response.ack_num);
+        else if(server_response.packet_header_pointer->fin_flag==true){
+            printf("RECV %d %d FIN\n", server_response.packet_header_pointer->sequence_num, server_response.packet_header_pointer->ack_num);
             client_state.udp_state= FIN_RCVD;
             //stert the timer
             Time.start();
             //wait for FIN from the server
-            client_state.ack_num= server_response.sequence_num;
+            client_state.ack_num= server_response.packet_header_pointer->sequence_num;
             //set a timer
             if ((sendto(sockfd, &client_ack_closing, sizeof(packet_info), 0, server, socklen)) == -1){
                 fprintf(stderr, "ERROR! The client could not send its ACK  Packet for closing\n");
