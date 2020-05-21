@@ -27,17 +27,17 @@
 //Client sends and ACK_NUM=0 for the first hand-shake
 #define INIT_ACK_NUM 0
 //needs to be 12bytes
-struct packet_header{
+typedef struct packet_header{
     int sequence_num; 
     int ack_num;
     bool ack_flag,
         syn_flag,
         fin_flag;
     bool nothing; //just for padding pusposes to be 12-bytes
-};
+}packet_header;
 //packet info 524 bytes including the payload
 typedef struct packet_info{
-    struct  packet_header * packet_header_pointer;
+    struct  packet_header packet_header_pointer;
     char data[MAX_PAYLOAD_SIZE];
 }packet_info;
 //keep track of state

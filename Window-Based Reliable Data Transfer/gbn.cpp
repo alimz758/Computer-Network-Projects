@@ -10,11 +10,11 @@ int packet_generator(packet_info *packet, int seq_num, int ack_num, int payload_
     //clear the packet from the previous call 
     memset(packet, 0, sizeof(*packet));
     //start structring the packet
-    packet->packet_header_pointer->sequence_num= seq_num;
-    packet->packet_header_pointer->ack_num=ack_num;
-    packet->packet_header_pointer->ack_flag=flags[0]; //ACK
-    packet->packet_header_pointer->fin_flag=flags[1]; // FIN
-    packet->packet_header_pointer->syn_flag=flags[2];// SYN
+    packet->packet_header_pointer.sequence_num= seq_num;
+    packet->packet_header_pointer.ack_num=ack_num;
+    packet->packet_header_pointer.ack_flag=flags[0]; //ACK
+    packet->packet_header_pointer.fin_flag=flags[1]; // FIN
+    packet->packet_header_pointer.syn_flag=flags[2];// SYN
     //copy the data
     if(data != NULL && payload_size>0){
         memcpy(packet->data,data,payload_size );
@@ -23,15 +23,14 @@ int packet_generator(packet_info *packet, int seq_num, int ack_num, int payload_
 }
 //helper function to clear the packet
 void clear_packet(packet_info *packet){
-    memset(packet, 0, sizeof(*packet));
+    memset(packet->data, 0, sizeof(packet));
 }
 //Helper function to generate a random number for ACK Number
 int random_num_generator(){
-    return rand()% MAX_SEQUENCE_NUM + 1; // 
+    struct timespec ts;
+    clock_gettime(CLOCK_MONOTONIC, &ts);
+    //using nano-seconds instead of seconds as this function gets called within a second on both server and client side
+    //before using this method i was getting the same "random" for both
+    srand((time_t)ts.tv_nsec);
+    return (rand()% MAX_SEQUENCE_NUM )+ 1;  
 }
-// Logic of the timer
-// setTimer(time period): Record the time out time point
-// Bool <- isTimeout(): Compare the current time with the time out time point. If smaller, return false; if equal or larger, return true
-// How to get current time?
-// C++11 or higher
-// auto now =std::chrono::high_resolution_clock::now();

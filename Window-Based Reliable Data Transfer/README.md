@@ -26,7 +26,8 @@ UDP Client :
     Close socket descriptor and exit.
 
 ## Problems I Ran Into
-
+rand()
+data_packet
 ## Resources Used
 
 For UDP creation:
@@ -50,6 +51,10 @@ https://linux.die.net/man/2/sendto
 For receiving the packet:
 
 https://linux.die.net/man/2/recvfrom
+
+For genereatinf rand() with seed:
+
+https://stackoverflow.com/questions/20201141/same-random-numbers-generated-every-time-in-c
 
 For the timer I used the following:
 
