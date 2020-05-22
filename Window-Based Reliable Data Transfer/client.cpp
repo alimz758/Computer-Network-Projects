@@ -271,10 +271,12 @@ int client_send_fin_packet(int sockfd){
                 client_state.udp_state =ACK_SENT;
             }
             while(time.elapsedSeconds()<2.0){
-                 clear_packet(&server_response);
+                //non-blocking sockets. In non-blocking mode, recvfrom will return an error when there is no data, instead of waiting. 
+                fcntl(sockfd, F_SETFL, O_NONBLOCK);
+                clear_packet(&server_response);
                 //wait for FIN from the server
                 if((recvfrom(sockfd, &server_response, sizeof(packet_header), 0, server, &socklen))==-1){
-                    fprintf(stderr, "ERROR! The client failed in receiving the FIN after receiving ACK from the server\n");
+                    //fprintf(stderr, "ERROR! The client failed in receiving the FIN after receiving ACK from the server\n");
                 }
                 else if(server_response.packet_header_pointer.fin_flag==true){
                     printf("RECV %d %d FIN\n", server_response.packet_header_pointer.sequence_num, server_response.packet_header_pointer.ack_num);
@@ -288,7 +290,6 @@ int client_send_fin_packet(int sockfd){
                     }
                 }
             }
-            printf("TIMEOUT\n");
             time.reset();
             client_state.udp_state=CLOSED;
             return close(sockfd);
@@ -355,7 +356,6 @@ int main(int argc, char *argv[]){
         fprintf(stderr, "ERROR! The clietn failed in closing the connection!\n");
         exit(EXIT_FAILURE);
     }
-    printf("here\n");
     //close the  file
     if (fclose(file) == EOF){
 		fprintf(stderr, "ERROR! Failed to close the file\n");

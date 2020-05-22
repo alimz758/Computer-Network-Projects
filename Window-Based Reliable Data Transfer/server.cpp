@@ -174,7 +174,6 @@ int main(int argc, char *argv[]){
         exit(1);
     }
     int port= atoi(argv[1]);
-    printf("\n\n\t\t\tSERVING ON PORT: %d\n\n", port);
     //struct to be used for biding
     struct sockaddr_in server_socket, client_socket;
     //open to listen 
