@@ -27,6 +27,7 @@ UDP Client :
 
 ## Problems I Ran Into
 rand()
+
 data_packet
 ## Resources Used
 
@@ -52,10 +53,10 @@ For receiving the packet:
 
 https://linux.die.net/man/2/recvfrom
 
-For genereatinf rand() with seed:
+For generating rand() with seed(nanosecond):
 
 https://stackoverflow.com/questions/20201141/same-random-numbers-generated-every-time-in-c
 
-For the timer I used the following:
+For the timer:
 
 https://gist.github.com/mcleary/b0bf4fa88830ff7c882d

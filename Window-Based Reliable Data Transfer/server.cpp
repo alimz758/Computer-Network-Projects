@@ -13,6 +13,8 @@ int connection_number=0;
 int server_handshake(int sockfd, struct sockaddr *client, socklen_t *socklen){
     //struct for storing the client respons
     packet_info client_response;
+    server_state.client_ptr = client;
+    server_state.dest_socklen = *socklen;
     clear_packet(&client_response);
     while(true){
         if((recvfrom(sockfd, (char *)&client_response, sizeof(packet_info), 0, client, socklen))==-1){
@@ -33,7 +35,7 @@ int server_handshake(int sockfd, struct sockaddr *client, socklen_t *socklen){
                 fprintf(stderr, "ERROR! Generating SYNACK failed\n");
             }
             //Sending the packet to the client
-            if ((sendto(sockfd, &synack_packet, sizeof(synack_packet), 0, client, *socklen)) == -1) {
+            if ((sendto(sockfd, (char *)&synack_packet, sizeof(packet_info), 0, client, *socklen)) == -1) {
                 fprintf(stderr, "ERROR! Server failed to send SYNACK \n");
             } else {
                 printf("SEND %d %d SYN ACK\n", server_state.seq_num,server_state.ack_num);
@@ -76,7 +78,6 @@ int data_packet_recv(int sockfd, void *buf){
         //check whether it's an ACK Data packet AND it's SEQ_NUM is the expected data
         //this would be the first data_packet received
         else if( client_data_packet.packet_header_pointer.sequence_num== server_state.next_expected_ack_num){
-            fprintf(stderr, "The server received the client's Packet with SEQ_NUM %d: \n", client_data_packet.packet_header_pointer.sequence_num);
             //copy the data_packet_payload into buffer
             server_state.udp_state= ACK_RCVD;
             int data_len= sizeof(client_data_packet.data);
@@ -100,7 +101,7 @@ int data_packet_recv(int sockfd, void *buf){
             packet_generator(&ack_packet, server_state.seq_num,server_state.ack_num,0,NULL,ack_flag);
             //send the ACK packet to the client
             if ((sendto(sockfd, &ack_packet, sizeof(ack_packet), 0, client, socklen)) == -1) {
-                fprintf(stderr, "ERROR! Server failed to send ACK for the data packet to the client \n");
+                fprintf(stderr, "ERROR! Server failed to send DATA-ACK\n");
             } 
             else{
                 fprintf(stdout, "SEND %d %d ACK\n", ack_packet.packet_header_pointer.sequence_num,ack_packet.packet_header_pointer.ack_num);
@@ -109,7 +110,6 @@ int data_packet_recv(int sockfd, void *buf){
         }
         //if the client sent FIN, indicating data packets are done
         else if(client_data_packet.packet_header_pointer.fin_flag==true){
-            fprintf(stderr,"The Server received the Client's FIN, starting its FIN...\n");
             fprintf(stdout, "RECV %d %d FIN\n",client_data_packet.packet_header_pointer.sequence_num, client_data_packet.packet_header_pointer.ack_num);
             server_state.ack_num=client_data_packet.packet_header_pointer.sequence_num+1;
             server_state.next_expected_ack_num= server_state.ack_num;
@@ -151,6 +151,7 @@ int send_fin_packet(int sockfd){
             //check whether the received ACK is what the server was expecting for
             else if(client_data_packet.packet_header_pointer.ack_flag==true && client_data_packet.packet_header_pointer.sequence_num== server_state.next_expected_ack_num){
                 //then close its connection
+                fprintf(stdout, "RECV %d %d ACK\n", client_data_packet.packet_header_pointer.sequence_num, client_data_packet.packet_header_pointer.ack_num);
                 server_state.udp_role=CLOSED;
                 close(sockfd);
                 return 0;
@@ -211,9 +212,8 @@ int main(int argc, char *argv[]){
     }
     //At this ponint connection is established so start receiving data
     //start  receiving data packets
-    std::string file_name =  std::to_string(output_file_saver_counter) + ".file";
+    std::string file_name =  std::to_string(output_file_saver_counter);
     const char * char_type_file_name = file_name.c_str();
-    printf("file name: %s \n",char_type_file_name);
     //open file, <connection_num>.file to write
     if((output_file= fopen(char_type_file_name, "w"))==NULL){
         fprintf(stderr, "ERROR! Could not open file to write on the server side\n");

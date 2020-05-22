@@ -12,7 +12,7 @@
             "program": "${workspaceFolder}/client", 
             "args": [
                 "localhost",
-                "8000",
+                "6000",
                 "binaryfile"
             ],
             "stopAtEntry": false,
@@ -22,21 +22,21 @@
             "externalConsole": false,
             "MIMode": "lldb"
         },
-        {
-            "name": "(lldb) Launch",
-            "type": "cppdbg",
-            "request": "launch",
-            "program": "${workspaceFolder}/server", 
-            "args": [
-                "8000",
-            ],
-            "stopAtEntry": false,
-            "launchCompleteCommand": "exec-run",
-            "cwd": "${workspaceFolder}",
-            "environment": [],
-            "externalConsole": false,
-            "MIMode": "lldb"
-        }
+        // {
+        //     "name": "(lldb) Launch",
+        //     "type": "cppdbg",
+        //     "request": "launch",
+        //     "program": "${workspaceFolder}/server", 
+        //     "args": [
+        //         "5000",
+        //     ],
+        //     "stopAtEntry": false,
+        //     "launchCompleteCommand": "exec-run",
+        //     "cwd": "${workspaceFolder}",
+        //     "environment": [],
+        //     "externalConsole": false,
+        //     "MIMode": "lldb"
+        // }
        
     ]
 }

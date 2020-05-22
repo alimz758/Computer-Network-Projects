@@ -9,4 +9,4 @@ dist:
 	tar -z -cf 305179067.tar.gz server.cpp client.cpp gbn.h gbn.cpp Makefile README.md
 
 clean:
-	rm -f *.o *.so *.tar.gz server client 
+	rm -f *.file *.o *.so *.tar.gz server client 
