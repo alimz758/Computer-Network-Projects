@@ -60,3 +60,7 @@ https://stackoverflow.com/questions/20201141/same-random-numbers-generated-every
 For the timer:
 
 https://gist.github.com/mcleary/b0bf4fa88830ff7c882d
+
+fread():
+
+http://www.cplusplus.com/reference/cstdio/fread/

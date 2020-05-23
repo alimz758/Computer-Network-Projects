@@ -13,6 +13,9 @@ class Timer
             m_EndTime = std::chrono::system_clock::now();
             m_bRunning = false;
         }
+        bool isRunning(){
+            return m_bRunning? true:false;
+        }
         double elapsedMilliseconds(){
             std::chrono::time_point<std::chrono::system_clock> endTime;
             if(m_bRunning)

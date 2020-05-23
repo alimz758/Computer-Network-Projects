@@ -23,6 +23,7 @@
 // ROLES
 #define CLIENT 1
 #define SERVER 2
+//sender window size
 #define SWS 10
 //Client sends and ACK_NUM=0 for the first hand-shake
 #define INIT_ACK_NUM 0
@@ -33,7 +34,7 @@ typedef struct packet_header{
     bool ack_flag,
         syn_flag,
         fin_flag;
-    bool nothing; //just for padding pusposes to be 12-bytes
+    int pack_num; //just for padding pusposes to be 12-bytes
 }packet_header;
 //packet info 524 bytes including the payload
 typedef struct packet_info{
@@ -51,6 +52,9 @@ typedef struct state {
     socklen_t dest_socklen;
     int next_expected_ack_num;  
     //the base number in GBN SWS
+    int client_packet_number_expected;
+    int server_packet_expected;
+    int next_seq_num;
     int window_base_num ;   
     int recv_ack_timeout_count;
     int seq_num;
@@ -71,7 +75,7 @@ enum {
     ACK_RCVD,
     SYN_ACK_SENT
 };
-int packet_generator(packet_info *packet, int seq_num, int ack_num, int payload_size,const void *data, bool flags[] );
+int packet_generator(packet_info *packet, int seq_num, int ack_num, int payload_size,const void *data, bool flags[],int  );
 void clear_packet(packet_info *);
 int random_num_generator();
 #endif

@@ -31,7 +31,7 @@ int server_handshake(int sockfd, struct sockaddr *client, socklen_t *socklen){
             //store the Server's ACK num
             server_state.ack_num= client_response.packet_header_pointer.sequence_num +1;
             //generating the SYNACK Packet
-            if(packet_generator(&synack_packet,server_state.seq_num,server_state.ack_num,0, NULL, flags )){
+            if(packet_generator(&synack_packet,server_state.seq_num,server_state.ack_num,0, NULL, flags,0 )){
                 fprintf(stderr, "ERROR! Generating SYNACK failed\n");
             }
             //Sending the packet to the client
@@ -53,6 +53,7 @@ int server_listen(){
     memset(&server_state, 0, sizeof(server_state));
     server_state.udp_state=LISTENING;
     server_state.udp_role=SERVER;
+    server_state.server_packet_expected=0;
     return 0;
 }
 //helper function to receive Data Packets from the server; a packet/time
@@ -81,6 +82,7 @@ int data_packet_recv(int sockfd, void *buf){
             //copy the data_packet_payload into buffer
             server_state.udp_state= ACK_RCVD;
             int data_len= sizeof(client_data_packet.data);
+            memset(buf,0, data_len);
             memcpy(buf, client_data_packet.data, data_len);
             //this would be for the first data_packet that would have an ACK
             if(client_data_packet.packet_header_pointer.ack_flag==true){
@@ -98,13 +100,15 @@ int data_packet_recv(int sockfd, void *buf){
             server_state.next_expected_ack_num= server_state.next_expected_ack_num +data_len> MAX_SEQUENCE_NUM ? 0: server_state.next_expected_ack_num +data_len;
             //store the server ACK  number when sending the ACK packet to the client
             server_state.ack_num= client_data_packet.packet_header_pointer.sequence_num + data_len;
-            packet_generator(&ack_packet, server_state.seq_num,server_state.ack_num,0,NULL,ack_flag);
+
+            packet_generator(&ack_packet, server_state.seq_num,server_state.ack_num,0,NULL,ack_flag,server_state.server_packet_expected);
             //send the ACK packet to the client
             if ((sendto(sockfd, &ack_packet, sizeof(ack_packet), 0, client, socklen)) == -1) {
                 fprintf(stderr, "ERROR! Server failed to send DATA-ACK\n");
             } 
             else{
                 fprintf(stdout, "SEND %d %d ACK\n", ack_packet.packet_header_pointer.sequence_num,ack_packet.packet_header_pointer.ack_num);
+                server_state.server_packet_expected++;
                 return data_len;
             }
         }
@@ -114,7 +118,7 @@ int data_packet_recv(int sockfd, void *buf){
             server_state.ack_num=client_data_packet.packet_header_pointer.sequence_num+1;
             server_state.next_expected_ack_num= server_state.ack_num;
             //generate ACK packet for the FIN received
-            packet_generator(&ack_packet, server_state.seq_num,server_state.ack_num,0,NULL,ack_flag);
+            packet_generator(&ack_packet, server_state.seq_num,server_state.ack_num,0,NULL,ack_flag,0);
              //send the ACK packet to the client
             if ((sendto(sockfd, &ack_packet, sizeof(packet_info), 0, client, socklen)) == -1) {
                 fprintf(stderr, "ERROR! Server failed to send ACK for the FIN received to the client \n");
@@ -135,7 +139,7 @@ int send_fin_packet(int sockfd){
     //Generate the FIN Packet
     packet_info fin_packet;
     bool fin_flags[3]={false,true,false};
-    packet_generator(&fin_packet, server_state.seq_num, INIT_ACK_NUM,0,NULL, fin_flags);
+    packet_generator(&fin_packet, server_state.seq_num, INIT_ACK_NUM,0,NULL, fin_flags,0);
     int min_attempt=1;
     int max_attempt=10;
     //try sending FIN for max 10 times
@@ -214,7 +218,7 @@ int main(int argc, char *argv[]){
     std::string file_name =  std::to_string(output_file_saver_counter);
     const char * char_type_file_name = file_name.c_str();
     //open file, <connection_num>.file to write
-    if((output_file= fopen(char_type_file_name, "w"))==NULL){
+    if((output_file= fopen(char_type_file_name, "wb"))==NULL){
         fprintf(stderr, "ERROR! Could not open file to write on the server side\n");
         exit(EXIT_FAILURE);
     }
@@ -226,6 +230,7 @@ int main(int argc, char *argv[]){
         else if(num_of_bytes_read==0){
             break;
         }
+        printf("%d\n",num_of_bytes_read );
         //write form the data_buffer to the stream
         fwrite(data_packet_buf, 1, num_of_bytes_read, output_file);
     }
