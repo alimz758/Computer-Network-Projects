@@ -13,7 +13,7 @@ char *send_buffer_packet;
 #define MAX_NUMBER_OF_ATTEMPTS 10
 state client_state;
 state server_state;
-
+int number_of_packets_needed;
 //helper function to initiate the first handshake
 //the client sends a SYN,  waits for SYNACK From the server, then the connection is established
 //then the client send the payload
@@ -21,7 +21,6 @@ state server_state;
 int handshake_connection(int sockfd, struct sockaddr *server, socklen_t socklen){
     //This means that, when performing calls on that socket, if the call cannot complete, then instead it will fail with an error like EWOULDBLOCK or EAGAIN
     fcntl(sockfd, F_SETFL, O_NONBLOCK);
-    printf("%zu\n", sizeof(packet_header));
     int sender_counter=0;
     //create a SYN packet
     packet_info syn_packet;
@@ -95,8 +94,9 @@ int data_packet_recv(int sockfd){
     }
     //if receive ack  for data packet and the ACK number is what we expected then
     else if(server_response.packet_header_pointer.ack_flag==true && client_state.client_packet_number_expected == server_response.packet_header_pointer.pack_num){
-        fprintf(stdout,"RECV %d ACK\n", server_response.packet_header_pointer.ack_num);
+        fprintf(stdout,"RECV %d %d ACK\n", server_response.packet_header_pointer.sequence_num,server_response.packet_header_pointer.ack_num);
         //increase the client expected num
+        //deallocate memory
         client_state.next_expected_ack_num+=MAX_PAYLOAD_SIZE;
         client_state.client_packet_number_expected++;
         client_state.window_base_num=server_response.packet_header_pointer.pack_num+1;
@@ -108,7 +108,6 @@ int data_packet_recv(int sockfd){
 int send_data_packet(int sockfd, const char * send_buffer_packet,size_t len){
     //store how many bites will be stored for the last packet
     int last_payload_len = len % MAX_PAYLOAD_SIZE;
-    int number_of_packets_needed;
     if(last_payload_len==0){
         number_of_packets_needed = len / MAX_PAYLOAD_SIZE;
     }
@@ -370,6 +369,9 @@ int main(int argc, char *argv[]){
             fprintf(stderr, "ERROR! Failed to send the data packet\n");
             exit(-1);
         }
+    }
+    for(int i=0 ; i<number_of_packets_needed;i++){
+        delete [] client_state.packet_buffer_tracker[i].data;
     }
     //closing connection
     //After sending all the packets the client would Send FIN

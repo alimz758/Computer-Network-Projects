@@ -39,7 +39,7 @@ typedef struct packet_header{
 //packet info 524 bytes including the payload
 typedef struct packet_info{
     struct  packet_header packet_header_pointer;
-    char data[MAX_PAYLOAD_SIZE];
+    char *data;
 }packet_info;
 //keep track of state
 typedef struct state {

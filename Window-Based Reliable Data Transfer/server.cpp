@@ -81,9 +81,9 @@ int data_packet_recv(int sockfd, void *buf){
         else if( client_data_packet.packet_header_pointer.sequence_num== server_state.next_expected_ack_num){
             //copy the data_packet_payload into buffer
             server_state.udp_state= ACK_RCVD;
-            int data_len= sizeof(client_data_packet.data);
+            int data_len= sizeof(&client_data_packet.data);
             memset(buf,0, data_len);
-            memcpy(buf, client_data_packet.data, data_len);
+            memcpy(buf, &client_data_packet.data, data_len);
             //this would be for the first data_packet that would have an ACK
             if(client_data_packet.packet_header_pointer.ack_flag==true){
                 fprintf(stdout, "RECV %d %d ACK\n", client_data_packet.packet_header_pointer.sequence_num, client_data_packet.packet_header_pointer.ack_num);
@@ -215,7 +215,7 @@ int main(int argc, char *argv[]){
     }
     //At this ponint connection is established so start receiving data
     //start  receiving data packets
-    std::string file_name =  std::to_string(output_file_saver_counter);
+    std::string file_name =  std::to_string(output_file_saver_counter)+".file";
     const char * char_type_file_name = file_name.c_str();
     //open file, <connection_num>.file to write
     if((output_file= fopen(char_type_file_name, "wb"))==NULL){
