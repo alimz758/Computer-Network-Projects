@@ -186,7 +186,6 @@ int send_data_packet(int sockfd, const char * send_buffer_packet,size_t len){
             else{
                 fprintf(stdout,"SEND %d 0\n", client_state.packet_buffer_tracker[client_state.next_seq_num ].packet_header_pointer.sequence_num);
             }
-            printf("%d\n",client_state.next_seq_num);
             client_state.next_seq_num++;
             timer.start();
         }
@@ -372,7 +371,6 @@ int main(int argc, char *argv[]){
         }
 
     }
-    printf("here2\n");
     //closing connection
     //After sending all the packets the client would Send FIN
     //wait for ACK then FIN from the server

@@ -31,11 +31,12 @@
 typedef struct packet_header{
     uint16_t sequence_num; 
     uint16_t ack_num;
-    int pack_num;
+    uint16_t len;
+    uint16_t pack_num;
     bool ack_flag,
         syn_flag,
         fin_flag;
-        int len;
+        
 }packet_header;
 //packet info 524 bytes including the payload
 typedef struct packet_info{
@@ -76,7 +77,7 @@ enum {
     ACK_RCVD,
     SYN_ACK_SENT
 };
-int packet_generator(packet_info *packet, uint16_t seq_num, uint16_t ack_num, int payload_size,const void *data, bool flags[],int  );
+int packet_generator(packet_info *packet, uint16_t seq_num, uint16_t ack_num, uint16_t payload_size,const void *data, bool flags[],int  );
 void clear_packet(packet_info *);
 int random_num_generator();
 #endif
