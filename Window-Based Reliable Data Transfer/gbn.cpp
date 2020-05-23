@@ -1,4 +1,3 @@
-
 #include "gbn.h"
 //helper function to create a packet for client/server
 int packet_generator(packet_info *packet, uint16_t seq_num, uint16_t ack_num, int payload_size,const void *data, bool flags[3], int pack_num ){
@@ -18,6 +17,7 @@ int packet_generator(packet_info *packet, uint16_t seq_num, uint16_t ack_num, in
     packet->packet_header_pointer.fin_flag=flags[1]; // FIN
     packet->packet_header_pointer.syn_flag=flags[2];// SYN
     packet->packet_header_pointer.pack_num= pack_num;
+    packet->packet_header_pointer.len=payload_size;
     //copy the data
     if(data != NULL && payload_size>0){
         memcpy(packet->data,data,payload_size );

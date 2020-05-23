@@ -186,6 +186,7 @@ int send_data_packet(int sockfd, const char * send_buffer_packet,size_t len){
             else{
                 fprintf(stdout,"SEND %d 0\n", client_state.packet_buffer_tracker[client_state.next_seq_num ].packet_header_pointer.sequence_num);
             }
+            printf("%d\n",client_state.next_seq_num);
             client_state.next_seq_num++;
             timer.start();
         }
@@ -208,7 +209,7 @@ int send_data_packet(int sockfd, const char * send_buffer_packet,size_t len){
             if(client_state.window_base_num==client_state.next_seq_num)
                 timer.reset();
         }
-
+        
         //break when reached the end
         if(client_state.window_base_num+1==number_of_packets_needed){
             return 0;
@@ -363,14 +364,15 @@ int main(int argc, char *argv[]){
     lSize = ftell (file);
     rewind (file);
     //allocate memory for the buffer
-    send_buffer_packet = (char*) malloc (sizeof(char)*lSize);
+    send_buffer_packet = (char*) malloc (sizeof(char)* (MAX_PAYLOAD_SIZE * MAX_WINDOW_SIZE));
     while((len=fread(send_buffer_packet,1,lSize, file))>0){
-        if (len != lSize) {fputs ("Reading error",stderr); exit (3);}
         if((send_data_packet(sockfd, send_buffer_packet,len)==-1)){
             fprintf(stderr, "ERROR! Failed to send the data packet\n");
             exit(-1);
         }
+
     }
+    printf("here2\n");
     //closing connection
     //After sending all the packets the client would Send FIN
     //wait for ACK then FIN from the server

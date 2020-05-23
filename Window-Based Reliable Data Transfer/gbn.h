@@ -35,11 +35,12 @@ typedef struct packet_header{
     bool ack_flag,
         syn_flag,
         fin_flag;
+        int len;
 }packet_header;
 //packet info 524 bytes including the payload
 typedef struct packet_info{
     struct  packet_header packet_header_pointer;
-    char data[100];
+    char data[MAX_PAYLOAD_SIZE];
 }packet_info;
 //keep track of state
 typedef struct state {

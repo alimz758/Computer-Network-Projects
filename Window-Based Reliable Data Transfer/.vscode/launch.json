@@ -13,7 +13,7 @@
             "args": [
                 "localhost",
                 "6000",
-                "binaryfile"
+                "one-mega-byte"
             ],
             "stopAtEntry": false,
             "launchCompleteCommand": "exec-run",
