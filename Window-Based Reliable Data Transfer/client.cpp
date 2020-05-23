@@ -371,7 +371,7 @@ int main(int argc, char *argv[]){
         }
     }
     for(int i=0 ; i<number_of_packets_needed;i++){
-        delete [] client_state.packet_buffer_tracker[i].data;
+        free( client_state.packet_buffer_tracker[i].data);
     }
     //closing connection
     //After sending all the packets the client would Send FIN

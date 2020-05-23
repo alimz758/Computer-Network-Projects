@@ -18,7 +18,7 @@ int packet_generator(packet_info *packet, uint16_t seq_num, uint16_t ack_num, in
     packet->packet_header_pointer.pack_num= pack_num;
     //copy the data
     if(data != NULL && payload_size>0){
-        packet->data = new char [100];
+        packet->data = (char*) malloc (sizeof(char)*payload_size);
         memcpy(packet->data,data,payload_size );
         printf("%zu\n",sizeof(packet->data));
     }
