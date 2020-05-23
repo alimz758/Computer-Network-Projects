@@ -230,7 +230,6 @@ int main(int argc, char *argv[]){
         else if(num_of_bytes_read==0){
             break;
         }
-        printf("%d\n",num_of_bytes_read );
         //write form the data_buffer to the stream
         fwrite(data_packet_buf, 1, num_of_bytes_read, output_file);
     }

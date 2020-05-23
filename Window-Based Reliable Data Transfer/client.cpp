@@ -21,6 +21,7 @@ state server_state;
 int handshake_connection(int sockfd, struct sockaddr *server, socklen_t socklen){
     //This means that, when performing calls on that socket, if the call cannot complete, then instead it will fail with an error like EWOULDBLOCK or EAGAIN
     fcntl(sockfd, F_SETFL, O_NONBLOCK);
+    printf("%zu\n", sizeof(packet_header));
     int sender_counter=0;
     //create a SYN packet
     packet_info syn_packet;
@@ -201,10 +202,13 @@ int send_data_packet(int sockfd, const char * send_buffer_packet,size_t len){
         }
         
         else if(data_ack_result==0){
-            //TODO:  RESTART  THE TIMER
+            //for only one packet, just return after recv ack
+            if(number_of_packets_needed==1)
+                return 0;
             if(client_state.window_base_num==client_state.next_seq_num)
                 timer.reset();
         }
+
         //break when reached the end
         if(client_state.window_base_num+1==number_of_packets_needed){
             return 0;

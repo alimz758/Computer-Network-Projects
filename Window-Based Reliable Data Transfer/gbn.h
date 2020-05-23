@@ -29,12 +29,12 @@
 #define INIT_ACK_NUM 0
 //needs to be 12bytes
 typedef struct packet_header{
-    int sequence_num; 
-    int ack_num;
+    uint16_t sequence_num; 
+    uint16_t ack_num;
+    int pack_num;
     bool ack_flag,
         syn_flag,
         fin_flag;
-    int pack_num; //just for padding pusposes to be 12-bytes
 }packet_header;
 //packet info 524 bytes including the payload
 typedef struct packet_info{
@@ -57,8 +57,8 @@ typedef struct state {
     int next_seq_num;
     int window_base_num ;   
     int recv_ack_timeout_count;
-    int seq_num;
-    int ack_num;
+    uint16_t seq_num;
+    uint16_t ack_num;
     int packet_num;
     packet_info packet_buffer_tracker[MAX_WINDOW_SIZE]; //TODO: NEED TO FIX THIS TO HOLD EXACTLY WHAT YOU NEED
 }state;
@@ -75,7 +75,7 @@ enum {
     ACK_RCVD,
     SYN_ACK_SENT
 };
-int packet_generator(packet_info *packet, int seq_num, int ack_num, int payload_size,const void *data, bool flags[],int  );
+int packet_generator(packet_info *packet, uint16_t seq_num, uint16_t ack_num, int payload_size,const void *data, bool flags[],int  );
 void clear_packet(packet_info *);
 int random_num_generator();
 #endif

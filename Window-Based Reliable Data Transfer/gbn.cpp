@@ -1,7 +1,7 @@
 
 #include "gbn.h"
 //helper function to create a packet for client/server
-int packet_generator(packet_info *packet, int seq_num, int ack_num, int payload_size,const void *data, bool flags[3], int pack_num ){
+int packet_generator(packet_info *packet, uint16_t seq_num, uint16_t ack_num, int payload_size,const void *data, bool flags[3], int pack_num ){
     //first check whether the packet_data_lenght is noth freater than 512 bytes
 
     if(payload_size > MAX_PAYLOAD_SIZE){
