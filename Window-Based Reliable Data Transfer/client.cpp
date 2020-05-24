@@ -13,7 +13,6 @@ char *send_buffer_packet;
 #define MAX_NUMBER_OF_ATTEMPTS 10
 state client_state;
 state server_state;
-
 //helper function to initiate the first handshake
 //the client sends a SYN,  waits for SYNACK From the server, then the connection is established
 //then the client send the payload
@@ -199,15 +198,14 @@ int send_data_packet(int sockfd, const char * send_buffer_packet,size_t len){
             break;
         }
         else if(data_ack_result==0){
-            //for only one packet, just return after recv ack
-            if(number_of_packets_needed==1)
-                return 0;
             if(client_state.window_base_num==client_state.next_seq_num)
                 timer.reset();
         }
         //return when reached the end
-        if(client_state.window_base_num+1==number_of_packets_needed)
+        if(number_of_packets_needed==1 ||client_state.window_base_num+1==number_of_packets_needed){
             return 0;
+        }
+            
     }
     return -1;
 }
@@ -361,12 +359,10 @@ int main(int argc, char *argv[]){
     //allocate memory for the buffer
     send_buffer_packet = (char*) malloc (sizeof(char)*lSize);
     while((len=fread(send_buffer_packet,1,lSize, file))>0){
-
         if((send_data_packet(sockfd, send_buffer_packet,len)==-1)){
             fprintf(stderr, "ERROR! Failed to send the data packet\n");
             exit(-1);
         }
-
     }
     //closing connection
     //After sending all the packets the client would Send FIN
@@ -376,11 +372,12 @@ int main(int argc, char *argv[]){
         fprintf(stderr, "ERROR! The clietn failed in closing the connection!\n");
         exit(EXIT_FAILURE);
     }
-    free(send_buffer_packet);
+   
     //close the  file
     if (fclose(file) == EOF){
 		fprintf(stderr, "ERROR! Failed to close the file\n");
 		exit(EXIT_FAILURE);
 	}
+    free(send_buffer_packet);
     return 0;
 }

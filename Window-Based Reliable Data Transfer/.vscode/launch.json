@@ -13,7 +13,7 @@
             "args": [
                 "localhost",
                 "6000",
-                "ten-mega-bytes"
+                "one-mega-byte"
             ],
             "stopAtEntry": false,
             "launchCompleteCommand": "exec-run",

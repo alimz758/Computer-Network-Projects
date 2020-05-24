@@ -19,7 +19,7 @@
 #define MAX_SEQUENCE_NUM 25600 //as desired by the assignment
 #define TIMEOUT 0.5 //0.5 sec
 #define MAX_WINDOW_SIZE 5120  //10 packets per window
-#define BUFFER_SIZE 1024
+#define MAX_BUFFER_SIZE 19532 //Max for 10MB file, not efficient
 // ROLES
 #define CLIENT 1
 #define SERVER 2
@@ -62,7 +62,7 @@ typedef struct state {
     uint16_t seq_num;
     uint16_t ack_num;
     int packet_num;
-    packet_info packet_buffer_tracker[MAX_WINDOW_SIZE]; //TODO: NEED TO FIX THIS TO HOLD EXACTLY WHAT YOU NEED
+    packet_info packet_buffer_tracker[MAX_BUFFER_SIZE]; //TODO: NEED TO FIX THIS TO HOLD EXACTLY WHAT YOU NEED
 }state;
 //different modes
 enum {
