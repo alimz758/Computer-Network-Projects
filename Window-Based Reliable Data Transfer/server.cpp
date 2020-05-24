@@ -7,6 +7,7 @@
 int sockfd, new_sockfd;
 state client_state;
 state server_state;
+
 //to be used on the server for saving the file as CONNECTION-ORDER.file
 int connection_number=0;
 //helper function for the server to send ACK 
@@ -69,6 +70,7 @@ int data_packet_recv(int sockfd, void *buf){
     packet_info ack_packet;
     //TODO PUT THIS IN gbn.h
     bool ack_flag[3]={true, false, false};
+    
     //start waiting for the client packet data
     while(true){
         //clear the client's packet buffer
@@ -78,10 +80,10 @@ int data_packet_recv(int sockfd, void *buf){
         }
         //check whether it's an ACK Data packet AND it's SEQ_NUM is the expected data
         //this would be the first data_packet received
-        else if( client_data_packet.packet_header_pointer.sequence_num== server_state.next_expected_ack_num){
+        else if( client_data_packet.packet_header_pointer.pack_num== server_state.server_packet_expected){
             //copy the data_packet_payload into buffer
             server_state.udp_state= ACK_RCVD;
-            int data_len= client_data_packet.packet_header_pointer.len;
+            uint16_t data_len= client_data_packet.packet_header_pointer.len;
             memset(buf,0, data_len);
             memcpy(buf, client_data_packet.data, data_len);
             //this would be for the first data_packet that would have an ACK
@@ -100,7 +102,6 @@ int data_packet_recv(int sockfd, void *buf){
             server_state.next_expected_ack_num= server_state.next_expected_ack_num +data_len> MAX_SEQUENCE_NUM ? 0: server_state.next_expected_ack_num +data_len;
             //store the server ACK  number when sending the ACK packet to the client
             server_state.ack_num= client_data_packet.packet_header_pointer.sequence_num + data_len;
-
             packet_generator(&ack_packet, server_state.seq_num,server_state.ack_num,0,NULL,ack_flag,server_state.server_packet_expected);
             //send the ACK packet to the client
             if ((sendto(sockfd, &ack_packet, sizeof(ack_packet), 0, client, socklen)) == -1) {
@@ -215,7 +216,7 @@ int main(int argc, char *argv[]){
     }
     //At this ponint connection is established so start receiving data
     //start  receiving data packets
-    std::string file_name =  std::to_string(output_file_saver_counter);
+    std::string file_name =  std::to_string(output_file_saver_counter)+ ".file";
     const char * char_type_file_name = file_name.c_str();
     //open file, <connection_num>.file to write
     if((output_file= fopen(char_type_file_name, "wb"))==NULL){

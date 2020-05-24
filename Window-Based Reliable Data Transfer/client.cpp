@@ -127,13 +127,12 @@ int send_data_packet(int sockfd, const char * send_buffer_packet,size_t len){
     //send the FIRST DATA_PACKET with SEQ_NUM AS THE SAME AS THE ACK_NUM it received
     packet_generator(&data_packet,client_state.seq_num , client_state.ack_num, number_of_packets_needed==1? last_payload_len: MAX_PAYLOAD_SIZE, send_buffer_packet+ packet_offset,ack_flags,pack_num );
     memcpy(&client_state.packet_buffer_tracker[0], &data_packet, sizeof(data_packet));
-    pack_num++;
+    packet_offset+= MAX_PAYLOAD_SIZE;//in case there are more than 1 and going inside the following loop
     //set the client expexted number with should receive ACK with the SEQ it sent
     client_state.next_expected_ack_num = client_state.seq_num + sizeof(data_packet.data);
     //genereate each data packet header and data_payload
-    for(counter=1; counter< number_of_packets_needed; counter++){
+    for(counter=1, pack_num=1; counter< number_of_packets_needed; counter++, pack_num++){
         //for the last packet, increase the SEQ_NUM exactly as it is needed instead of 512
-        pack_num++;
         if(counter +1 == number_of_packets_needed && last_payload_len!=0 && client_state.seq_num + last_payload_len< MAX_SEQUENCE_NUM){
             client_state.seq_num+= last_payload_len;
         }
@@ -156,7 +155,6 @@ int send_data_packet(int sockfd, const char * send_buffer_packet,size_t len){
             //increase the offset by 512B for the next packet
             packet_offset+= MAX_PAYLOAD_SIZE;
         }
-        pack_num++;
         memset(&client_state.packet_buffer_tracker[counter],0, sizeof(client_state.packet_buffer_tracker[counter]));
         //set each client_packet's data
         memcpy(&client_state.packet_buffer_tracker[counter], &data_packet, sizeof(data_packet));
@@ -200,7 +198,6 @@ int send_data_packet(int sockfd, const char * send_buffer_packet,size_t len){
             fprintf(stderr, "ERROR! The client received -1 while waiting for DATA ACK\n");
             break;
         }
-        
         else if(data_ack_result==0){
             //for only one packet, just return after recv ack
             if(number_of_packets_needed==1)
@@ -208,11 +205,9 @@ int send_data_packet(int sockfd, const char * send_buffer_packet,size_t len){
             if(client_state.window_base_num==client_state.next_seq_num)
                 timer.reset();
         }
-        
-        //break when reached the end
-        if(client_state.window_base_num+1==number_of_packets_needed){
+        //return when reached the end
+        if(client_state.window_base_num+1==number_of_packets_needed)
             return 0;
-        }
     }
     return -1;
 }
@@ -352,7 +347,7 @@ int main(int argc, char *argv[]){
     if(handshake_connection(sockfd,(struct sockaddr *)&servaddr, socklen)==-1){
         fprintf(stderr, "ERROR! Could not init the first handshake\n");
         exit(-1);
-    }
+    }    
     //Pipelining and sending the file
     //size_t fread ( void * ptr, size_t size, size_t count, FILE * stream );
     //Read block of data from stream
@@ -362,9 +357,11 @@ int main(int argc, char *argv[]){
     fseek (file , 0 , SEEK_END);
     lSize = ftell (file);
     rewind (file);
+    printf("%ld", lSize);
     //allocate memory for the buffer
-    send_buffer_packet = (char*) malloc (sizeof(char)* (MAX_PAYLOAD_SIZE * MAX_WINDOW_SIZE));
+    send_buffer_packet = (char*) malloc (sizeof(char)*lSize);
     while((len=fread(send_buffer_packet,1,lSize, file))>0){
+
         if((send_data_packet(sockfd, send_buffer_packet,len)==-1)){
             fprintf(stderr, "ERROR! Failed to send the data packet\n");
             exit(-1);
