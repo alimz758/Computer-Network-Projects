@@ -4,7 +4,6 @@
 // After transmitting the entire file, send FIN packet and wait for ACK.
 // After receive server FIN, send ACK and wait for 2 seconds to close the connection.
 #include "gbn.h"
-
 char *send_buffer_packet;
 //------------------- CLIENT ------------------
 //OVERVIEW OF THE CLIENT
@@ -18,9 +17,8 @@ state server_state;
 //then the client send the payload
 //if SYNACK was not received after a while, timeout, it will give up
 int handshake_connection(int sockfd, struct sockaddr *server, socklen_t socklen){
-    //This means that, when performing calls on that socket, if the call cannot complete, then instead it will fail with an error like EWOULDBLOCK or EAGAIN
+    //Make the sockfd non-blocking
     fcntl(sockfd, F_SETFL, O_NONBLOCK);
-    printf("%zu\n", sizeof(packet_header));
     int sender_counter=0;
     //create a SYN packet
     packet_info syn_packet;
@@ -122,15 +120,14 @@ int send_data_packet(int sockfd, const char * send_buffer_packet,size_t len){
     bool no_flags[3]={false,false,false};
     //clear the packet buffer tracker of the client
     memset(&client_state.packet_buffer_tracker[0],0, sizeof(client_state.packet_buffer_tracker[0]));
-    int pack_num=0;
     //send the FIRST DATA_PACKET with SEQ_NUM AS THE SAME AS THE ACK_NUM it received
-    packet_generator(&data_packet,client_state.seq_num , client_state.ack_num, number_of_packets_needed==1? last_payload_len: MAX_PAYLOAD_SIZE, send_buffer_packet+ packet_offset,ack_flags,pack_num );
+    packet_generator(&data_packet,client_state.seq_num , client_state.ack_num, number_of_packets_needed==1? last_payload_len: MAX_PAYLOAD_SIZE, send_buffer_packet+ packet_offset,ack_flags,0 );
     memcpy(&client_state.packet_buffer_tracker[0], &data_packet, sizeof(data_packet));
     packet_offset+= MAX_PAYLOAD_SIZE;//in case there are more than 1 and going inside the following loop
     //set the client expexted number with should receive ACK with the SEQ it sent
     client_state.next_expected_ack_num = client_state.seq_num + sizeof(data_packet.data);
     //genereate each data packet header and data_payload
-    for(counter=1, pack_num=1; counter< number_of_packets_needed; counter++, pack_num++){
+    for(counter=1; counter< number_of_packets_needed; counter++){
         //for the last packet, increase the SEQ_NUM exactly as it is needed instead of 512
         if(counter +1 == number_of_packets_needed && last_payload_len!=0 && client_state.seq_num + last_payload_len< MAX_SEQUENCE_NUM){
             client_state.seq_num+= last_payload_len;
@@ -146,11 +143,11 @@ int send_data_packet(int sockfd, const char * send_buffer_packet,size_t len){
         }
         //if the last packet
         if(counter +1 == number_of_packets_needed && last_payload_len!=0){
-            packet_generator(&data_packet,client_state.seq_num , INIT_ACK_NUM,last_payload_len, send_buffer_packet+ packet_offset,no_flags,pack_num );
+            packet_generator(&data_packet,client_state.seq_num , INIT_ACK_NUM,last_payload_len, send_buffer_packet+ packet_offset,no_flags,counter );
         }
         //not the last packet
         else{
-            packet_generator(&data_packet,client_state.seq_num , INIT_ACK_NUM ,MAX_PAYLOAD_SIZE, send_buffer_packet+ packet_offset,no_flags,pack_num );
+            packet_generator(&data_packet,client_state.seq_num , INIT_ACK_NUM ,MAX_PAYLOAD_SIZE, send_buffer_packet+ packet_offset,no_flags,counter );
             //increase the offset by 512B for the next packet
             packet_offset+= MAX_PAYLOAD_SIZE;
         }
@@ -164,7 +161,8 @@ int send_data_packet(int sockfd, const char * send_buffer_packet,size_t len){
     //be used when sending DATA Packet to the server
     struct sockaddr* server = client_state.server_ptr;
     socklen_t socklen = client_state.dest_socklen;
-    Timer timer;    
+    Timer timer;
+    int retransmite_counter;    
     // -------- SENDING THE PACKET ---------------
     //loop starting from the base_num until reaching to number of packets that are there to be sent
     while(client_state.window_base_num < number_of_packets_needed){
@@ -188,8 +186,22 @@ int send_data_packet(int sockfd, const char * send_buffer_packet,size_t len){
         }
         if(timer.elapsedSeconds()>2){
             timer.reset();
-            printf("TIMEOUT\n");
-            //TODO:retransmite [base, next_seq_num-1]
+            printf("TIMEOUT %d\n",client_state.packet_buffer_tracker[client_state.next_seq_num ].packet_header_pointer.sequence_num );
+            //retransmite [base, next_seq_num-1]
+            for(retransmite_counter = client_state.window_base_num; retransmite_counter<client_state.next_seq_num; retransmite_counter++){
+                if((sendto(sockfd, &client_state.packet_buffer_tracker[retransmite_counter ],sizeof(packet_info), 0, server, socklen))==-1){
+                    fprintf(stderr,"ERROR! Could not send RESEND DATA_Packet with base_num: %d, SEQ_NUM: %d\n", retransmite_counter, client_state.packet_buffer_tracker[retransmite_counter ].packet_header_pointer.sequence_num);
+                }
+                //for the first data packet with ACK Field
+                else if(client_state.packet_buffer_tracker[retransmite_counter ].packet_header_pointer.ack_flag==true){
+                    fprintf(stdout,"RESEND %d %d ACK\n", 
+                        client_state.packet_buffer_tracker[retransmite_counter ].packet_header_pointer.sequence_num,client_state.packet_buffer_tracker[retransmite_counter].packet_header_pointer.ack_num );
+                }
+                else{
+                    fprintf(stdout,"RESEND %d 0\n", client_state.packet_buffer_tracker[retransmite_counter].packet_header_pointer.sequence_num);
+                }
+            }
+            timer.start();
         }
         //wait to receive ACK from the server
         int data_ack_result = data_packet_recv(sockfd);

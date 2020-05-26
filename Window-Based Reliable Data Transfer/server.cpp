@@ -141,28 +141,45 @@ int send_fin_packet(int sockfd){
     packet_info fin_packet;
     bool fin_flags[3]={false,true,false};
     packet_generator(&fin_packet, server_state.seq_num, INIT_ACK_NUM,0,NULL, fin_flags,0);
-    int min_attempt=1;
-    int max_attempt=10;
+    Timer timer;
+    //flag for restrasnmitting the FIN
+    bool resend=false;
     //try sending FIN for max 10 times
-    while(min_attempt<=max_attempt){
+    while(true){
         if ((sendto(sockfd, &fin_packet, sizeof(packet_info), 0, client, socklen)) == -1) {
             fprintf(stderr, "ERROR! Server failed to send FIN after sending its ACK\n");
         } 
-        else{
-            fprintf(stdout, "SEND %d 0 FIN\n", fin_packet.packet_header_pointer.sequence_num);
+        else{//start the RTO timer
+            timer.start();
+            //pritinting formats
+            if(!resend)
+                fprintf(stdout, "SEND %d 0 FIN\n", fin_packet.packet_header_pointer.sequence_num);
+            else{
+                fprintf(stdout, "RESEND %d 0 FIN\n", fin_packet.packet_header_pointer.sequence_num);
+            }
+            //check whether recv the ACK
             if((recvfrom(sockfd, (char *)&client_data_packet, sizeof(packet_info), 0, client, &socklen))==-1){
                 fprintf(stderr, "ERROR! The server failed to receive the client's data packet\n");
             }
-            //check whether the received ACK is what the server was expecting for
-            else if(client_data_packet.packet_header_pointer.ack_flag==true && client_data_packet.packet_header_pointer.sequence_num== server_state.next_expected_ack_num){
+            //check whether the received ACK is what the server was expecting for within RTO_TIMEOUT
+            else if(timer.elapsedSeconds()<TIMEOUT && client_data_packet.packet_header_pointer.ack_flag==true && client_data_packet.packet_header_pointer.sequence_num== server_state.next_expected_ack_num){
                 //then close its connection
                 fprintf(stdout, "RECV %d %d ACK\n", client_data_packet.packet_header_pointer.sequence_num, client_data_packet.packet_header_pointer.ack_num);
                 server_state.udp_role=CLOSED;
+                //stop the timerq
+                timer.reset();
                 close(sockfd);
                 return 0;
+            } 
+            //TIMEOUT 
+            else{
+                //stop the timer
+                timer.reset();
+                fprintf(stdout, "TIMEOUT %d\n", fin_packet.packet_header_pointer.sequence_num);
+                resend= true;
+                //it'll restransmit its FIN again 
             }
         }
-        min_attempt++;
     }
     return -1;
 }
