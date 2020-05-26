@@ -80,4 +80,5 @@ enum {
 int packet_generator(packet_info *packet, uint16_t seq_num, uint16_t ack_num, uint16_t payload_size,const void *data, bool flags[],int  );
 void clear_packet(packet_info *);
 int random_num_generator();
+int sequence_number_calculator(int, int );
 #endif

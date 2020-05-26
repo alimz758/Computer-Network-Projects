@@ -176,6 +176,7 @@ int send_fin_packet(int sockfd){
                 //stop the timer
                 timer.reset();
                 fprintf(stdout, "TIMEOUT %d\n", fin_packet.packet_header_pointer.sequence_num);
+                timer.start();
                 resend= true;
                 //it'll restransmit its FIN again 
             }

@@ -36,3 +36,10 @@ int random_num_generator(){
     srand((time_t)ts.tv_nsec);
     return (rand()% MAX_SEQUENCE_NUM )+ 1;  
 }
+//helper function to see sequence number  doesn't exceed the MAX, if then  recalculibrate it
+int sequence_number_calculator(int seq_num, int offset){
+    int sum =seq_num  + offset;
+    if(sum<= MAX_SEQUENCE_NUM)
+        return sum;
+    return sum % (MAX_SEQUENCE_NUM +1);
+}
