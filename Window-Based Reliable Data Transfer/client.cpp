@@ -172,11 +172,11 @@ int send_data_packet(int sockfd, const char * send_buffer_packet,size_t len){
             else{
                 fprintf(stdout,"SEND %d 0\n", client_state.packet_buffer_tracker[client_state.next_seq_num ].packet_header_pointer.sequence_num);
             }
-            client_state.next_seq_num++;
-            if(client_state.next_seq_num +1== SWS + client_state.window_base_num)
+            if(client_state.next_seq_num == client_state.window_base_num)
                 timer.start();
+            client_state.next_seq_num++;
         }
-        if(timer.elapsedSeconds() > TIMEOUT){
+        if(timer.isRTO()){
             timer.reset();
             printf("TIMEOUT %d\n",client_state.packet_buffer_tracker[client_state.window_base_num ].packet_header_pointer.sequence_num );
             //retransmite [base, next_seq_num-1]
@@ -195,12 +195,12 @@ int send_data_packet(int sockfd, const char * send_buffer_packet,size_t len){
             }
             timer.start();
         }
-        printf("%f\n", timer.elapsedSeconds());
+        //printf("%f\n", timer.elapsedSeconds());
         //wait to receive ACK from the server
         int data_ack_result = data_packet_recv(sockfd);
         if(data_ack_result==-1){
             fprintf(stderr, "ERROR! The client received -1 while waiting for DATA ACK\n");
-            break;
+            
         }
         else if(data_ack_result==0){
             if(client_state.window_base_num==client_state.next_seq_num)

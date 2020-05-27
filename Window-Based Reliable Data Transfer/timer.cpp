@@ -13,6 +13,9 @@ class Timer
             m_EndTime = std::chrono::high_resolution_clock::now();
             m_bRunning = false;
         }
+        bool isRTO(){
+            return elapsedSeconds()==0.5? true:false;
+        }
         bool isRunning(){
             return m_bRunning? true:false;
         }
@@ -41,5 +44,6 @@ class Timer
     private:
         std::chrono::time_point<std::chrono::high_resolution_clock> m_StartTime;
         std::chrono::time_point<std::chrono::high_resolution_clock> m_EndTime;
+        std::chrono::time_point<std::chrono::high_resolution_clock> timeOut;
         bool                                               m_bRunning = false;
 };
