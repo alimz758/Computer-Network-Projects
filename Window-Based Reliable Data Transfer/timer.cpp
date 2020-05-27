@@ -2,6 +2,7 @@
 #include <chrono>
 #include <ctime>
 #include <cmath>
+#include <ratio>
 class Timer
 {
     public:
@@ -14,7 +15,12 @@ class Timer
             m_bRunning = false;
         }
         bool isRTO(){
-            return elapsedSeconds()==0.5? true:false;
+            if(m_bRunning){
+                timeOut = std::chrono::high_resolution_clock::now();
+                std::chrono::duration<double> elapsed_seconds = timeOut - m_StartTime;
+                return elapsed_seconds.count()>0.5? true:false;
+            }
+            return false;
         }
         bool isRunning(){
             return m_bRunning? true:false;

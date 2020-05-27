@@ -97,8 +97,11 @@ int data_packet_recv(int sockfd){
             client_state.next_expected_ack_num+=MAX_PAYLOAD_SIZE;
             client_state.client_packet_number_expected++;
             client_state.window_base_num=server_response.packet_header_pointer.pack_num+1;
+            return 0;
         }
-        return 0;
+        //for out of order
+        return 1;
+        
     }
     return -1;
 }
@@ -203,8 +206,10 @@ int send_data_packet(int sockfd, const char * send_buffer_packet,size_t len){
             
         }
         else if(data_ack_result==0){
-            if(client_state.window_base_num==client_state.next_seq_num)
-                timer.reset();
+            timer.reset();
+            // if(client_state.window_base_num==client_state.next_seq_num)
+            //     timer.reset();
+            timer.start();
         }
         //return when reached the end and received all the packets
         if( (number_of_packets_needed==1 ||client_state.window_base_num+1==number_of_packets_needed )){
