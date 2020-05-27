@@ -91,12 +91,14 @@ int data_packet_recv(int sockfd){
         fprintf(stdout, "ERROR! RECV failed for data ACK!\n");
     }
     //if receive ack  for data packet and the ACK number is what we expected then
-    else if(server_response.packet_header_pointer.ack_flag==true && client_state.client_packet_number_expected == server_response.packet_header_pointer.pack_num){
+    else if(server_response.packet_header_pointer.ack_flag==true){
         fprintf(stdout,"RECV %d %d ACK\n", server_response.packet_header_pointer.sequence_num,server_response.packet_header_pointer.ack_num);
         //increase the client expected num and received packets
-        client_state.next_expected_ack_num+=MAX_PAYLOAD_SIZE;
-        client_state.client_packet_number_expected++;
-        client_state.window_base_num=server_response.packet_header_pointer.pack_num+1;
+        if(client_state.client_packet_number_expected == server_response.packet_header_pointer.pack_num){
+            client_state.next_expected_ack_num+=MAX_PAYLOAD_SIZE;
+            client_state.client_packet_number_expected++;
+            client_state.window_base_num=server_response.packet_header_pointer.pack_num+1;
+        }
         return 0;
     }
     return -1;
@@ -173,7 +175,7 @@ int send_data_packet(int sockfd, const char * send_buffer_packet,size_t len){
             client_state.next_seq_num++;
             timer.start();
         }
-        if(timer.elapsedSeconds()>2){
+        if(timer.elapsedSeconds()>2 ){
             timer.reset();
             printf("TIMEOUT %d\n",client_state.packet_buffer_tracker[client_state.window_base_num ].packet_header_pointer.sequence_num );
             //retransmite [base, next_seq_num-1]
