@@ -12,9 +12,6 @@ char *send_buffer_packet;
 #define MAX_NUMBER_OF_ATTEMPTS 10
 state client_state;
 state server_state;
-//I use it in two functions that's why I am doing it globally
-Timer fin_timer;
-int last_seq;
 //helper function to initiate the first handshake
 //the client sends a SYN,  waits for SYNACK From the server, then the connection is established
 //then the client send the payload
@@ -107,7 +104,7 @@ int data_packet_recv(int sockfd){
 //helper fucntion to send data packets after establishing 
 int send_data_packet(int sockfd, const char * send_buffer_packet,size_t len){
     //store how many bites will be stored for the last packet
-    int last_payload_len = len % MAX_PAYLOAD_SIZE;
+    int last_payload_len = len==MAX_PAYLOAD_SIZE? len : len % MAX_PAYLOAD_SIZE;
     int number_of_packets_needed;
     if(last_payload_len==0){
         number_of_packets_needed = len / MAX_PAYLOAD_SIZE;
@@ -121,7 +118,6 @@ int send_data_packet(int sockfd, const char * send_buffer_packet,size_t len){
     int packet_offset= 0;
     bool ack_flags[3]={true,false,false}; //Only ACK Flag
     bool no_flags[3]={false,false,false};
-    bool fin_sent=false;
     //clear the packet buffer tracker of the client
     memset(&client_state.packet_buffer_tracker[0],0, sizeof(client_state.packet_buffer_tracker[0]));
     //send the FIRST DATA_PACKET with SEQ_NUM AS THE SAME AS THE ACK_NUM it received
@@ -177,34 +173,9 @@ int send_data_packet(int sockfd, const char * send_buffer_packet,size_t len){
             client_state.next_seq_num++;
             timer.start();
         }
-        //send FIN after sending all data packets 
-        if (client_state.next_seq_num== number_of_packets_needed && !fin_sent){
-            fin_sent=true;
-            packet_info fin_packet;
-            bool flags[3]={false, true, false};
-            //create the clietn FIN packet
-            packet_generator(&fin_packet,client_state.seq_num , INIT_ACK_NUM,0,NULL,flags,0);
-            //try sending the FIN packet
-            while(true){
-                if ((sendto(sockfd, &fin_packet, sizeof(packet_info), 0, server, socklen)) == -1){
-                    fprintf(stderr, "ERROR! The client could not send its FIN Packet\n");
-                }
-                else {
-                    //start the fin_timer
-                    //stop in fin function
-                    fin_timer.start();
-                    printf("SEND %d 0 FIN\n", client_state.seq_num);
-                    client_state.udp_state = FIN_SENT;
-                    last_seq= client_state.seq_num;
-                    //set the client seq number for the next packet sending
-                    client_state.seq_num = sequence_number_calculator(client_state.seq_num , 1);
-                    break;
-                }
-            }
-        }
         if(timer.elapsedSeconds()>2){
             timer.reset();
-            printf("TIMEOUT %d\n",client_state.packet_buffer_tracker[client_state.next_seq_num ].packet_header_pointer.sequence_num );
+            printf("TIMEOUT %d\n",client_state.packet_buffer_tracker[client_state.window_base_num ].packet_header_pointer.sequence_num );
             //retransmite [base, next_seq_num-1]
             for(retransmite_counter = client_state.window_base_num; retransmite_counter<client_state.next_seq_num; retransmite_counter++){
                 if((sendto(sockfd, &client_state.packet_buffer_tracker[retransmite_counter ],sizeof(packet_info), 0, server, socklen))==-1){
@@ -233,9 +204,6 @@ int send_data_packet(int sockfd, const char * send_buffer_packet,size_t len){
         }
         //return when reached the end and received all the packets
         if( (number_of_packets_needed==1 ||client_state.window_base_num+1==number_of_packets_needed )){
-            //at this point all the data packets have been sent
-            //sending the Client-FIN
-            //waiting to receive all the data ack then return
             return 0;
         }   
     }
@@ -248,30 +216,31 @@ int client_send_fin_packet(int sockfd){
     clear_packet(&server_response);
     bool flags[3]={false, true, false};
     //create the clietn FIN packet in case need for resending
-    packet_generator(&fin_packet,last_seq , INIT_ACK_NUM,0,NULL,flags,0);
+    packet_generator(&fin_packet,client_state.seq_num , INIT_ACK_NUM,0,NULL,flags,0);
     //retrieve the  server info
     struct sockaddr* server = client_state.server_ptr;
     socklen_t socklen = client_state.dest_socklen;
+    Timer fin_timer;
     //try sending the FIN packet
-    // int try_counter=1;
-    // while(true){
-    //     if ((sendto(sockfd, &fin_packet, sizeof(packet_info), 0, server, socklen)) == -1){
-    //         fprintf(stderr, "ERROR! The client could not send its FIN Packet, try #%d\n", try_counter);
-    //         try_counter++;
-    //     }
-    //     else {
-    //         printf("SEND %d 0 FIN\n", client_state.seq_num);
-    //         client_state.udp_state = FIN_SENT;
-    //         //set the client seq number for the next packet sending
-    //         if(client_state.seq_num +1 > MAX_SEQUENCE_NUM){
-    //             client_state.seq_num=0;
-    //         }
-    //         else{
-    //             client_state.seq_num+=1;
-    //         }
-    //         break;
-    //     }
-    // }
+    //int try_counter=1;
+    while(true){
+        if ((sendto(sockfd, &fin_packet, sizeof(packet_info), 0, server, socklen)) == -1){
+            fprintf(stderr, "ERROR! The client could not send its FIN Packet\n");
+        }
+        else {
+            printf("SEND %d 0 FIN\n", client_state.seq_num);
+            client_state.udp_state = FIN_SENT;
+            fin_timer.start();
+            //set the client seq number for the next packet sending
+            if(client_state.seq_num +1 > MAX_SEQUENCE_NUM){
+                client_state.seq_num=0;
+            }
+            else{
+                client_state.seq_num+=1;
+            }
+            break;
+        }
+    }
     //waiting to receive first ACK , then FIN from the server
     while(true){
         if((recvfrom(sockfd, &server_response, sizeof(packet_header), 0, server, &socklen))==-1){
@@ -292,7 +261,7 @@ int client_send_fin_packet(int sockfd){
                 //start the fin_timer
                 //stop in fin function
                 fin_timer.start();
-                printf("RESEND %d 0 FIN\n", last_seq);
+                printf("RESEND %d 0 FIN\n", client_state.seq_num);
                 client_state.udp_state = FIN_SENT;
                 break;
             }

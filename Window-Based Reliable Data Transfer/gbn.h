@@ -75,7 +75,8 @@ enum {
 	FIN_RCVD,
     ACK_SENT,
     ACK_RCVD,
-    SYN_ACK_SENT
+    SYN_ACK_SENT,
+    DUP_SYN_ACK_SENT
 };
 int packet_generator(packet_info *packet, uint16_t seq_num, uint16_t ack_num, uint16_t payload_size,const void *data, bool flags[],int  );
 void clear_packet(packet_info *);
