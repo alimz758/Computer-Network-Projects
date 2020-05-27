@@ -72,7 +72,6 @@ int data_packet_recv(int sockfd, void *buf){
     packet_info ack_packet;
     //TODO PUT THIS IN gbn.h
     bool ack_flag[3]={true, false, false};
-    
     //start waiting for the client packet data
     while(true){
         //clear the client's packet buffer
@@ -132,8 +131,6 @@ int data_packet_recv(int sockfd, void *buf){
             //this would be for the first data_packet that would have an ACK
             if(client_data_packet.packet_header_pointer.ack_flag==true){
                 fprintf(stdout, "RECV %d %d ACK\n", client_data_packet.packet_header_pointer.sequence_num, client_data_packet.packet_header_pointer.ack_num);
-                //set up the Server SEQ NUMBER is it won't change ans stay the same after this point
-                server_state.seq_num= client_data_packet.packet_header_pointer.ack_num;
             }
             //for the later data packet w/o ACK
             else{

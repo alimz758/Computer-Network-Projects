@@ -36,7 +36,7 @@ int handshake_connection(int sockfd, struct sockaddr *server, socklen_t socklen)
     //packet_generator(packet_info *packet, int seq_num, int ack_num, int payload_size,const void *data, bool flags[3] )
     packet_generator(&syn_packet,random_seq_num,INIT_ACK_NUM,0,NULL,flags,0);
     //keep trying for max 10 times to send SYN packet
-    while(sender_counter< MAX_NUMBER_OF_ATTEMPTS){
+    while(true){
         //send packet to the client
         if((sendto(sockfd,&syn_packet,sizeof(syn_packet), 0, server, socklen))!=-1){
             fprintf(stdout, "SEND %d %d SYN\n", random_seq_num, INIT_ACK_NUM);
@@ -73,7 +73,6 @@ int handshake_connection(int sockfd, struct sockaddr *server, socklen_t socklen)
         else{
             fprintf(stderr,"ERROR! Client could not send its SYN Packet for the %d time\n", sender_counter+1);
         }
-        sender_counter++;
     }
     fprintf(stderr, "The client faild to send SYN after 10 attempts.\n");
     return -1;
@@ -154,6 +153,7 @@ int send_data_packet(int sockfd, const char * send_buffer_packet,size_t len){
     socklen_t socklen = client_state.dest_socklen;
     Timer timer;
     int retransmite_counter;
+
     // -------- SENDING THE PACKETS ---------------
     //loop starting from the base_num until reaching to number of packets that are there to be sent
     while(client_state.window_base_num < number_of_packets_needed){
@@ -173,9 +173,10 @@ int send_data_packet(int sockfd, const char * send_buffer_packet,size_t len){
                 fprintf(stdout,"SEND %d 0\n", client_state.packet_buffer_tracker[client_state.next_seq_num ].packet_header_pointer.sequence_num);
             }
             client_state.next_seq_num++;
-            timer.start();
+            if(client_state.next_seq_num +1== SWS + client_state.window_base_num)
+                timer.start();
         }
-        if(timer.elapsedSeconds()>2 ){
+        if(timer.elapsedSeconds() > TIMEOUT){
             timer.reset();
             printf("TIMEOUT %d\n",client_state.packet_buffer_tracker[client_state.window_base_num ].packet_header_pointer.sequence_num );
             //retransmite [base, next_seq_num-1]
@@ -194,6 +195,7 @@ int send_data_packet(int sockfd, const char * send_buffer_packet,size_t len){
             }
             timer.start();
         }
+        printf("%f\n", timer.elapsedSeconds());
         //wait to receive ACK from the server
         int data_ack_result = data_packet_recv(sockfd);
         if(data_ack_result==-1){
