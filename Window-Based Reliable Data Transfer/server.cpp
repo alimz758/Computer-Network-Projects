@@ -110,6 +110,7 @@ int data_packet_recv(int sockfd, void *buf){
             else{
                 fprintf(stdout, "RECV %d 0\n", client_data_packet.packet_header_pointer.sequence_num);
             }
+            printf("received in order # %d\n",server_state.server_packet_expected);
             //store the next expected SEQ_NUM from the server
             //do so by increasing it by data_payload_size
             server_state.next_expected_ack_num= sequence_number_calculator(server_state.next_expected_ack_num, data_len);

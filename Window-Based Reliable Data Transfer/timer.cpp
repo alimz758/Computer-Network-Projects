@@ -25,13 +25,6 @@ class Timer
         bool isRunning(){
             return m_bRunning? true:false;
         }
-        bool isTimeOut(double timeout){
-            if(timeout<elapsedSeconds()){
-                return true;
-            }
-
-            return false;
-        }
         double elapsedMilliseconds(){
             std::chrono::time_point<std::chrono::high_resolution_clock> endTime;
             if(m_bRunning)

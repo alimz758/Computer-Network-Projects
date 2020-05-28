@@ -96,12 +96,13 @@ int data_packet_recv(int sockfd){
         if(client_state.client_packet_number_expected == server_response.packet_header_pointer.pack_num){
             client_state.next_expected_ack_num+=MAX_PAYLOAD_SIZE;
             client_state.client_packet_number_expected++;
+            printf("received packet #%d , base # %d\n", client_state.client_packet_number_expected,client_state.window_base_num);
             client_state.window_base_num=server_response.packet_header_pointer.pack_num+1;
             return 0;
         }
+        printf("received out of order/dup packet # %d\n", client_state.client_packet_number_expected);
         //for out of order
-        return 1;
-        
+        return 1; 
     }
     return -1;
 }
