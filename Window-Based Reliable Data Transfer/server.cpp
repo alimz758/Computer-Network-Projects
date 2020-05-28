@@ -110,7 +110,7 @@ int data_packet_recv(int sockfd, void *buf){
             else{
                 fprintf(stdout, "RECV %d 0\n", client_data_packet.packet_header_pointer.sequence_num);
             }
-            printf("received in order # %d\n",server_state.server_packet_expected);
+            //printf("received in order # %d\n",server_state.server_packet_expected);
             //store the next expected SEQ_NUM from the server
             //do so by increasing it by data_payload_size
             server_state.next_expected_ack_num= sequence_number_calculator(server_state.next_expected_ack_num, data_len);
@@ -128,7 +128,7 @@ int data_packet_recv(int sockfd, void *buf){
             }
         }
         //if the server received out of order packets or didn't receive the expexted packet from the client
-        else if(client_data_packet.packet_header_pointer.pack_num >   server_state.server_packet_expected ){
+        else if(client_data_packet.packet_header_pointer.pack_num !=   server_state.server_packet_expected ){
             //this would be for the first data_packet that would have an ACK
             if(client_data_packet.packet_header_pointer.ack_flag==true){
                 fprintf(stdout, "RECV %d %d ACK\n", client_data_packet.packet_header_pointer.sequence_num, client_data_packet.packet_header_pointer.ack_num);

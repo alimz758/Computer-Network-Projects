@@ -81,13 +81,13 @@ int handshake_connection(int sockfd, struct sockaddr *server, socklen_t socklen)
 int data_packet_recv(int sockfd){
     //TODO HANDLE DUP-ACK TO RESEND WITH APPROPRAITE
     //Turn off non-blocking mode (i.e. make recvfrom blocking again) */
-    fcntl(sockfd, F_SETFL, 0);
+    fcntl(sockfd, F_SETFL, O_NONBLOCK);
     //create a place to store server_packet header
     packet_info server_response;
     clear_packet(&server_response);
     //receive the data failed
     if((recvfrom(sockfd, (char *)&server_response, sizeof(packet_info), 0, client_state.client_ptr, &client_state.dest_socklen))==-1){
-        fprintf(stdout, "ERROR! RECV failed for data ACK!\n");
+        //fprintf(stdout, "ERROR! RECV failed for data ACK!\n");
     }
     //if receive ack  for data packet and the ACK number is what we expected then
     else if(server_response.packet_header_pointer.ack_flag==true){
@@ -96,11 +96,19 @@ int data_packet_recv(int sockfd){
         if(client_state.client_packet_number_expected == server_response.packet_header_pointer.pack_num){
             client_state.next_expected_ack_num+=MAX_PAYLOAD_SIZE;
             client_state.client_packet_number_expected++;
-            printf("received packet #%d , base # %d\n", client_state.client_packet_number_expected,client_state.window_base_num);
+            //printf("received packet #%d , base # %d\n", client_state.client_packet_number_expected,client_state.window_base_num);
             client_state.window_base_num=server_response.packet_header_pointer.pack_num+1;
             return 0;
         }
-        printf("received out of order/dup packet # %d\n", client_state.client_packet_number_expected);
+        //if got greater than what expected
+        else if(client_state.client_packet_number_expected < server_response.packet_header_pointer.pack_num){
+            client_state.next_expected_ack_num+=MAX_PAYLOAD_SIZE;
+            client_state.client_packet_number_expected=server_response.packet_header_pointer.pack_num+1;
+            //printf("received packet #%d , base # %d\n", client_state.client_packet_number_expected,client_state.window_base_num);
+            client_state.window_base_num=server_response.packet_header_pointer.pack_num+1;
+            return 0;
+        }
+       // printf("received out of order/dup packet # %d\n", client_state.client_packet_number_expected);
         //for out of order
         return 1; 
     }
@@ -199,17 +207,7 @@ int send_data_packet(int sockfd, const char * send_buffer_packet,size_t len){
             }
             timer.start();
         }
-        //printf("%f\n", timer.elapsedSeconds());
-        //wait to receive ACK from the server
-        int data_ack_result = data_packet_recv(sockfd);
-        if(data_ack_result==-1){
-            fprintf(stderr, "ERROR! The client received -1 while waiting for DATA ACK\n");
-            
-        }
-        else if(data_ack_result==0){
-            timer.reset();
-            // if(client_state.window_base_num==client_state.next_seq_num)
-            //     timer.reset();
+        if(data_packet_recv(sockfd)==0){
             timer.start();
         }
         //return when reached the end and received all the packets
