@@ -180,7 +180,7 @@ int send_data_packet(int sockfd, const char * send_buffer_packet,size_t len){
                 timer.start();
             client_state.next_seq_num++;
         }
-        if(timer.isRTO()){
+        if(timer.isTimeout()){
             timer.reset();
             printf("TIMEOUT %d\n",client_state.packet_buffer_tracker[client_state.window_base_num ].packet_header_pointer.sequence_num );
             //retransmite [base, next_seq_num-1]
