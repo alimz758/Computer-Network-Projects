@@ -43,7 +43,7 @@ int handshake_connection(int sockfd, struct sockaddr *server, socklen_t socklen)
             client_state.udp_state=SYN_SENT;
             //start the timer
             time.start();
-            while(time.elapsedSeconds()!=TIMEOUT){
+            while(!time.isRTO()){
                 //WAITING FOR SYNACK from the server
                 if((recvfrom(sockfd, (char *)&server_packet_response, sizeof(packet_info), 0, server, &socklen))!=-1 
                     &&server_packet_response.packet_header_pointer.ack_flag==true && server_packet_response.packet_header_pointer.syn_flag==true ){
@@ -188,7 +188,7 @@ int send_data_packet(int sockfd, const char * send_buffer_packet,size_t len){
                 timer.start();
             client_state.next_seq_num++;
         }
-        if(timer.isTimeout()){
+        if(timer.isRTO()){
             timer.reset();
             printf("TIMEOUT %d\n",client_state.packet_buffer_tracker[client_state.window_base_num ].packet_header_pointer.sequence_num );
             //retransmite [base, next_seq_num-1]
@@ -252,7 +252,7 @@ int client_send_fin_packet(int sockfd){
     //waiting to receive first ACK , then FIN from the server
     while(true){
         if((recvfrom(sockfd, &server_response, sizeof(packet_header), 0, server, &socklen))==-1){
-            fprintf(stderr, "ERROR! The client failed in receiving the ACK after sending its FIN\n");
+            //fprintf(stderr, "ERROR! The client failed in receiving the ACK after sending its FIN\n");
         }
         else if( fin_timer.elapsedSeconds()< TIMEOUT &&  server_response.packet_header_pointer.ack_flag==true){
             fin_timer.reset();
