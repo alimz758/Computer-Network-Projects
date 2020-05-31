@@ -93,24 +93,14 @@ int data_packet_recv(int sockfd){
     else if(server_response.packet_header_pointer.ack_flag==true){
         fprintf(stdout,"RECV %d %d ACK\n", server_response.packet_header_pointer.sequence_num,server_response.packet_header_pointer.ack_num);
         //increase the client expected num and received packets
-        if(client_state.client_packet_number_expected == server_response.packet_header_pointer.pack_num){
-            client_state.next_expected_ack_num+=MAX_PAYLOAD_SIZE;
-            client_state.client_packet_number_expected++;
-            //printf("received packet #%d , base # %d\n", client_state.client_packet_number_expected,client_state.window_base_num);
-            client_state.window_base_num=server_response.packet_header_pointer.pack_num+1;
-            return 0;
-        }
-        //if got greater than what expected
-        else if(client_state.client_packet_number_expected < server_response.packet_header_pointer.pack_num){
+        if(client_state.client_packet_number_expected <= server_response.packet_header_pointer.pack_num){
             client_state.next_expected_ack_num+=MAX_PAYLOAD_SIZE;
             client_state.client_packet_number_expected=server_response.packet_header_pointer.pack_num+1;
             //printf("received packet #%d , base # %d\n", client_state.client_packet_number_expected,client_state.window_base_num);
             client_state.window_base_num=server_response.packet_header_pointer.pack_num+1;
             return 0;
         }
-       // printf("received out of order/dup packet # %d\n", client_state.client_packet_number_expected);
-        //for out of order
-        return 1; 
+        // s
     }
     return -1;
 }

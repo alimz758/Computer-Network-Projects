@@ -77,7 +77,7 @@ int data_packet_recv(int sockfd, void *buf){
         //clear the client's packet buffer
         clear_packet(&client_data_packet);
         if((recvfrom(sockfd, (char *)&client_data_packet, sizeof(packet_info), 0, client, &socklen))==-1){
-            fprintf(stderr, "ERROR! The server failed to receive the client's data packet\n");
+            //fprintf(stderr, "ERROR! The server failed to receive the client's data packet\n");
         }
         //check whether the client resent its SYN again due to SYN-ACK LOSS
         else if(client_data_packet.packet_header_pointer.syn_flag ==true  && sent_syn_ack_already ){
@@ -139,7 +139,7 @@ int data_packet_recv(int sockfd, void *buf){
             }
             //send the DUP-ACK packet to the client
             if ((sendto(sockfd, &ack_packet, sizeof(ack_packet), 0, client, socklen)) == -1) {
-                fprintf(stderr, "ERROR! Server failed to send DATA-ACK\n");
+                //fprintf(stderr, "ERROR! Server failed to send DATA-ACK\n");
             } 
             else{
                 fprintf(stdout, "SEND %d %d DUP-ACK\n", ack_packet.packet_header_pointer.sequence_num,ack_packet.packet_header_pointer.ack_num);
