@@ -128,7 +128,7 @@ int data_packet_recv(int sockfd, void *buf){
             }
         }
         //if the server received out of order packets or didn't receive the expexted packet from the client
-        else if(client_data_packet.packet_header_pointer.pack_num !=   server_state.server_packet_expected ){
+        else if(client_data_packet.packet_header_pointer.pack_num !=   server_state.server_packet_expected && client_data_packet.packet_header_pointer.fin_flag==false ){
             //this would be for the first data_packet that would have an ACK
             if(client_data_packet.packet_header_pointer.ack_flag==true){
                 fprintf(stdout, "RECV %d %d ACK\n", client_data_packet.packet_header_pointer.sequence_num, client_data_packet.packet_header_pointer.ack_num);

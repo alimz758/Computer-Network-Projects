@@ -74,7 +74,6 @@ int handshake_connection(int sockfd, struct sockaddr *server, socklen_t socklen)
             fprintf(stderr,"ERROR! Client could not send its SYN Packet for the %d time\n", sender_counter+1);
         }
     }
-    fprintf(stderr, "The client faild to send SYN after 10 attempts.\n");
     return -1;
 }
 //helper function to receive the data packer from the server
@@ -96,11 +95,9 @@ int data_packet_recv(int sockfd){
         if(client_state.client_packet_number_expected <= server_response.packet_header_pointer.pack_num){
             client_state.next_expected_ack_num+=MAX_PAYLOAD_SIZE;
             client_state.client_packet_number_expected=server_response.packet_header_pointer.pack_num+1;
-            //printf("received packet #%d , base # %d\n", client_state.client_packet_number_expected,client_state.window_base_num);
             client_state.window_base_num=server_response.packet_header_pointer.pack_num+1;
             return 0;
         }
-        // s
     }
     return -1;
 }
@@ -220,7 +217,6 @@ int client_send_fin_packet(int sockfd){
     socklen_t socklen = client_state.dest_socklen;
     Timer fin_timer;
     //try sending the FIN packet
-    //int try_counter=1;
     while(true){
         if ((sendto(sockfd, &fin_packet, sizeof(packet_info), 0, server, socklen)) == -1){
             fprintf(stderr, "ERROR! The client could not send its FIN Packet\n");
@@ -230,12 +226,7 @@ int client_send_fin_packet(int sockfd){
             client_state.udp_state = FIN_SENT;
             fin_timer.start();
             //set the client seq number for the next packet sending
-            if(client_state.seq_num +1 > MAX_SEQUENCE_NUM){
-                client_state.seq_num=0;
-            }
-            else{
-                client_state.seq_num+=1;
-            }
+            client_state.seq_num = sequence_number_calculator(client_state.seq_num ,1);
             break;
         }
     }
@@ -275,7 +266,7 @@ int client_send_fin_packet(int sockfd){
         clear_packet(&server_response);
         //wait for FIN from the server
         if((recvfrom(sockfd, &server_response, sizeof(packet_header), 0, server, &socklen))==-1){
-            fprintf(stderr, "ERROR! The client failed in receiving the FIN after receiving ACK from the server\n");
+            //fprintf(stderr, "ERROR! The client failed in receiving the FIN after receiving ACK from the server\n");
         }
         else if(server_response.packet_header_pointer.fin_flag==true){
             printf("RECV %d %d FIN\n", server_response.packet_header_pointer.sequence_num, server_response.packet_header_pointer.ack_num);
