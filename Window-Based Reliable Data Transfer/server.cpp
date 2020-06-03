@@ -273,6 +273,7 @@ int main(int argc, char *argv[]){
         fprintf(stderr, "ERROR! Could not open file to write on the server side\n");
         exit(EXIT_FAILURE);
     }
+    output_file_saver_counter++;
     while(true){
         if((num_of_bytes_read=data_packet_recv(new_sockfd,data_packet_buf))==-1){
             fprintf(stderr,"ERROR! The server failed in receiving the Data Packets/FIN from the client; didn't read any bytes\n");
