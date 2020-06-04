@@ -21,8 +21,8 @@ int server_handshake(int sockfd, struct sockaddr *client, socklen_t *socklen){
     clear_packet(&client_response);
     while(true){
         if((recvfrom(sockfd, (char *)&client_response, sizeof(packet_info), 0, client, socklen))==-1){
-            fprintf(stderr, "ERROR! The server failed to receive the client's message\n");
-            continue;
+            //fprintf(stderr, "ERROR! The server failed to receive the client's message\n");
+            return 0;
         }
         //check that whether it's a SYN and client SEQ_NUM +1 is indeed the expexted number
         else if(client_response.packet_header_pointer.syn_flag ==true ){
@@ -78,6 +78,7 @@ int data_packet_recv(int sockfd, void *buf){
         clear_packet(&client_data_packet);
         if((recvfrom(sockfd, (char *)&client_data_packet, sizeof(packet_info), 0, client, &socklen))==-1){
             //fprintf(stderr, "ERROR! The server failed to receive the client's data packet\n");
+            
         }
         //check whether the client resent its SYN again due to SYN-ACK LOSS
         else if(client_data_packet.packet_header_pointer.syn_flag ==true  && sent_syn_ack_already ){
@@ -200,7 +201,6 @@ int send_fin_packet(int sockfd){
                 server_state.udp_role=CLOSED;
                 //stop the timerq
                 timer.reset();
-                close(sockfd);
                 return 0;
             } 
             //TIMEOUT 
@@ -210,7 +210,6 @@ int send_fin_packet(int sockfd){
                 fprintf(stdout, "TIMEOUT %d\n", fin_packet.packet_header_pointer.sequence_num);
                 timer.start();
                 resend= true;
-                //it'll restransmit its FIN again 
             }
         }
     }
@@ -245,55 +244,57 @@ int main(int argc, char *argv[]){
     server_socket.sin_port=htons(port);/* htons converts a short integer (e.g. port) to a network representation */ 
     //The address for this socket
     server_socket.sin_addr.s_addr = htonl(INADDR_ANY);/* htonl converts a long integer (e.g. address) to a network representation */ 
-    //bind the socket
     int binding_socket = bind(sockfd, (struct sockaddr *) &server_socket, sizeof(server_socket));
-    if(binding_socket<0){
-        fprintf( stderr,"ERROR! Could not bind the socket\n");
-        exit(EXIT_FAILURE); 
-    }
-    //The listen system call tells a socket that it should be capable of accepting incoming connections
-    //The second parameter, backlog, defines the maximum number of pending connections that can be queued up before connections are refused.
-    if (server_listen() < 0) { 
-        fprintf(stderr,"ERROR! Could not listen to the socket\n");
-        exit(EXIT_FAILURE); 
-    }
+        if(binding_socket<0){
+            fprintf( stderr,"ERROR! Could not bind the socket\n");
+            exit(EXIT_FAILURE); 
+        }
     //Waiting for the client to connect 
     socklen = sizeof(struct sockaddr_in);
-    //waiting for the client to connect 
-    if((new_sockfd =server_handshake(sockfd, (struct sockaddr *)&client_socket, &socklen))==-1){
-        fprintf(stderr,"ERROR! Server could not establish the onnection with the client\n");
-        exit(EXIT_FAILURE); 
-    }
-    //At this ponint connection is established so start receiving data
-    //start  receiving data packets
-    std::string file_name =  std::to_string(output_file_saver_counter)+ ".file";
-    const char * char_type_file_name = file_name.c_str();
-    //open file, <connection_num>.file to write
-    if((output_file= fopen(char_type_file_name, "wb"))==NULL){
-        fprintf(stderr, "ERROR! Could not open file to write on the server side\n");
-        exit(EXIT_FAILURE);
-    }
-    output_file_saver_counter++;
+    //bind the socket
     while(true){
-        if((num_of_bytes_read=data_packet_recv(new_sockfd,data_packet_buf))==-1){
-            fprintf(stderr,"ERROR! The server failed in receiving the Data Packets/FIN from the client; didn't read any bytes\n");
+        //The listen system call tells a socket that it should be capable of accepting incoming connections
+        //The second parameter, backlog, defines the maximum number of pending connections that can be queued up before connections are refused.
+        if (server_listen() < 0) { 
+            fprintf(stderr,"ERROR! Could not listen to the socket\n");
+            exit(EXIT_FAILURE); 
+        }
+        //waiting for the client to connect 
+        if((new_sockfd =server_handshake(sockfd, (struct sockaddr *)&client_socket, &socklen))==-1){
+            fprintf(stderr,"ERROR! Server could not establish the onnection with the client\n");
+            exit(EXIT_FAILURE); 
+        }
+        //At this ponint connection is established so start receiving data
+        //start  receiving data packets
+        std::string file_name =  std::to_string(output_file_saver_counter)+ ".file";
+        const char * char_type_file_name = file_name.c_str();
+        //open file, <connection_num>.file to write
+        if((output_file= fopen(char_type_file_name, "wb"))==NULL){
+            fprintf(stderr, "ERROR! Could not open file to write on the server side\n");
             exit(EXIT_FAILURE);
         }
-        else if(num_of_bytes_read==0){
-            break;
+        while(true){
+            if((num_of_bytes_read=data_packet_recv(new_sockfd,data_packet_buf))==-1){
+                fprintf(stderr,"ERROR! The server failed in receiving the Data Packets/FIN from the client; didn't read any bytes\n");
+                exit(EXIT_FAILURE);
+            }
+            else if(num_of_bytes_read==0){
+                break;
+            }
+            //write form the data_buffer to the stream
+            fwrite(data_packet_buf, 1, num_of_bytes_read, output_file);
         }
-        //write form the data_buffer to the stream
-        fwrite(data_packet_buf, 1, num_of_bytes_read, output_file);
-    }
-    //Closing the server side connection by sending FIN from the server
-    if((send_fin_packet(sockfd))==-1){
-        fprintf(stderr, "ERROR! The server failed sending its FIN to the clinet\n");
-        exit(EXIT_FAILURE);
-    }
-    //closing the output file
-    if (fclose(output_file) == EOF){
-        fprintf(stderr,"ERROR! The server could not close the output file stream\n");
-        exit(EXIT_FAILURE);
+        //Closing the server side connection by sending FIN from the server
+        if((send_fin_packet(sockfd))==-1){
+            fprintf(stderr, "ERROR! The server failed sending its FIN to the clinet\n");
+            exit(EXIT_FAILURE);
+        }
+        //closing the output file
+        if (fclose(output_file) == EOF){
+            fprintf(stderr,"ERROR! The server could not close the output file stream\n");
+            exit(EXIT_FAILURE);
+        }
+        output_file_saver_counter++;
     }
     return 0;
 }
