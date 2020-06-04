@@ -72,35 +72,35 @@ After cloning the repo, go to this directory, `cd Window-Based Reliable Data Tra
 
 `make` will generate two executables 'client' and 'server' and three binary files (100B, 1MB, 10MB) for testing.
 
-You could generate your own binary file vy using cat /dev/urandom | head -c <SIZE_OF_FILE> > <NAME_OF_FILE>
+You could generate your own binary file vy using `cat /dev/urandom | head -c <SIZE_OF_FILE> > <NAME_OF_FILE>`
 
-Note that this implementation handles files up to 10MB only
+Note that this implementation only handles files up to 10MB
 
-Now you are ready to run the client and server, so open two terminals; one for the client and onw for the server
+Now you are ready to run the client and server, so open two terminals; one for the client and one for the server
 
-Note that there is no parallelism in this implementation and the server process clients sequentially and save
+Note that there is no parallelism in this implementation and the server processes clients sequentially and save
 
 the files according to their connection order `<CONNECTION-ORDER>.file`. Check out the specs for more details
 
 Server-Side:
 
-    `./server <PORT_NUMBER>` : `./server 5000`
+    ./server <PORT_NUMBER> : ./server 5000
 
 Client-Side:
 
-    `./client <IP_ADDRESS> <PORT_NUMBER_USED_ON_THE_SERVER> <FILE>` : `./client localhost 5000 one_MB`
+    ./client <IP_ADDRESS> <PORT_NUMBER_USED_ON_THE_SERVER> <FILE> : ./client localhost 5000 one_MB
 
 Note if you'd like to run the program with packet loss you need access to `tc` command in which you need a root access
 
-on a Linux machine; I recommend Ubuntu on a virtual machine
+on a Linux machine; I recommend Ubuntu on a virtual machine if your host is not Linux
 
 Check out this website on how to use `tc`: http://www.linuxfoundation.org/collaborate/workgroups/networking/netem.
 
-Finally, after client close its connection you check whether the server saved exactly the file as the original
+Finally, after client closes its connection you can check whether the server saved exactly the file as the original
 
-For instnance if the client tried to send `one_MB` and this connection was the first connection that the server received
+For instnance if the client tried to send `one_MB` and this connection was the first connection that the server received,
 
-you could run the following to test whether they are the same or not
+you could run the following to test whether they are the same or not:
 
     `diff 1.file one_MB`
 
